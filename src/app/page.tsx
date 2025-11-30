@@ -1,65 +1,151 @@
 import Image from "next/image";
+import { GlassCard, GlassPill } from "@/components";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-gradient-subtle">
+      {/* Header */}
+      <header className="px-6 pt-12 pb-6">
+        <h1 className="text-3xl font-bold text-white">scottd3v</h1>
+        <p className="text-zinc-400 mt-1">Apps & Projects</p>
+      </header>
+
+      {/* Category Pills */}
+      <nav className="px-6 pb-6">
+        <div className="flex gap-3 flex-wrap">
+          <GlassPill label="All" isActive />
+          <GlassPill
+            icon={<span className="text-amber-400">🎮</span>}
+            label="Games"
+          />
+          <GlassPill
+            icon={<span className="text-blue-400">📱</span>}
+            label="Apps"
+          />
+          <GlassPill
+            icon={<span className="text-purple-400">👤</span>}
+            label="About"
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </nav>
+
+      {/* Main Grid */}
+      <main className="px-6 pb-12">
+        <div className="grid grid-cols-2 gap-4 max-w-2xl">
+          {/* Dead Hang Tracker - Featured App */}
+          <GlassCard
+            href="/dead-hang-tracker"
+            icon={
+              <Image
+                src="/dead-hang-icon-180.png"
+                alt="Dead Hang Tracker"
+                width={40}
+                height={40}
+                className="rounded-lg"
+              />
+            }
+            title="Dead Hang Tracker"
+            subtitle="iOS & watchOS"
+            isActive
+            size="wide"
+          />
+
+          {/* Games Section */}
+          <GlassCard
+            href="/games"
+            icon={<span className="text-amber-400 text-3xl">🎮</span>}
+            title="Games"
+            subtitle="Coming Soon"
+          />
+
+          {/* About */}
+          <GlassCard
+            href="/about"
+            icon={<span className="text-purple-400 text-3xl">👤</span>}
+            title="About"
+            subtitle="Scott Reed"
+          />
+
+          {/* Contact */}
+          <GlassCard
+            href="/contact"
+            icon={<span className="text-blue-400 text-3xl">✉️</span>}
+            title="Contact"
+            subtitle="Get in touch"
+          />
+
+          {/* Support */}
+          <GlassCard
+            href="/support"
+            icon={<span className="text-green-400 text-3xl">🛟</span>}
+            title="Support"
+            subtitle="Help & FAQ"
+          />
         </div>
       </main>
+
+      {/* Footer Tab Bar */}
+      <footer className="fixed bottom-0 left-0 right-0 p-4">
+        <div className="glass-pill mx-auto max-w-xs flex justify-center gap-6 py-3 px-6">
+          <a
+            href="/"
+            className="text-white/90 hover:text-white transition-colors"
+            aria-label="Home"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+          </a>
+          <a
+            href="/about"
+            className="text-white/50 hover:text-white transition-colors"
+            aria-label="About"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+          </a>
+          <a
+            href="/contact"
+            className="text-white/50 hover:text-white transition-colors"
+            aria-label="Contact"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }

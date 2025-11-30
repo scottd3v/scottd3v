@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Black background -->
+  <rect width="1024" height="1024" rx="224" fill="#000000"/>
+  
+  <!-- Champagne gold: #E8C47C -->
+  <g stroke="#E8C47C" fill="none" stroke-width="56" stroke-linecap="round" stroke-linejoin="round">
+    
+    <!-- Bar -->
+    <line x1="150" y1="125" x2="874" y2="125"/>
+    
+    <!-- V-shaped arms -->
+    <path d="M 190 125 L 435 390 L 589 390 L 834 125"/>
+    
+    <!-- Left leg -->
+    <line x1="450" y1="545" x2="450" y2="880"/>
+    
+    <!-- Right leg -->
+    <line x1="574" y1="545" x2="574" y2="880"/>
+    
+  </g>
+  
+  <!-- Filled torso rectangle -->
+  <rect x="422" y="390" width="180" height="183" fill="#E8C47C"/>
+  
+  <!-- Head -->
+  <circle cx="512" cy="258" r="85" fill="#E8C47C"/>
+  
+</svg>

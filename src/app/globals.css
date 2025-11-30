@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-hover: rgba(255, 255, 255, 0.1);
+  --text-primary: #e5e5e5;
+  --text-secondary: #888888;
+  --accent: #fbbf24; /* Yellow accent like Home app lights */
 }
 
 @theme inline {
@@ -12,15 +18,78 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle background gradient like iOS wallpaper blur */
+.bg-gradient-subtle {
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(251, 191, 36, 0.04) 0%, transparent 60%),
+    var(--background);
+}
+
+/* Glass card base styles */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  transition: all 0.2s ease-out;
+}
+
+.glass:hover {
+  background: var(--glass-hover);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.glass:active {
+  transform: scale(0.98);
+}
+
+/* Glass pill (smaller, like category buttons) */
+.glass-pill {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 100px;
+  transition: all 0.2s ease-out;
+}
+
+.glass-pill:hover {
+  background: var(--glass-hover);
+}
+
+/* Specular highlight effect (top edge glow) */
+.specular {
+  position: relative;
+}
+
+.specular::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  border-radius: 100px;
+}
+
+/* Active card state (like selected light in Home app) */
+.glass-active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #0a0a0a;
+}
+
+.glass-active:hover {
+  background: rgba(255, 255, 255, 0.95);
 }
