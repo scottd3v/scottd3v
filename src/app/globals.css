@@ -1,14 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --glass-bg: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-hover: rgba(255, 255, 255, 0.1);
-  --text-primary: #e5e5e5;
-  --text-secondary: #888888;
-  --accent: #fbbf24; /* Yellow accent like Home app lights */
+  --background: #050508;
+  --foreground: #f4f4f5;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-hover: rgba(255, 255, 255, 0.12);
+  --text-primary: #fafafa;
+  --text-secondary: #71717a;
+  --accent-gold: #f59e0b;
+  --accent-blue: #3b82f6;
+  --accent-purple: #a855f7;
+  --accent-green: #22c55e;
 }
 
 @theme inline {
@@ -26,70 +29,256 @@ body {
   overflow-x: hidden;
 }
 
-/* Subtle background gradient like iOS wallpaper blur */
-.bg-gradient-subtle {
-  background:
-    radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(251, 191, 36, 0.04) 0%, transparent 60%),
-    var(--background);
+/* Rich atmospheric background with moving gradients */
+.bg-gradient-rich {
+  background: var(--background);
+  position: relative;
 }
 
-/* Glass card base styles */
+.bg-gradient-rich::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 30%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 60% at 80% 70%, rgba(168, 85, 247, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 80% at 40% 90%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 100% at 50% 0%, rgba(255, 255, 255, 0.02) 0%, transparent 40%);
+  pointer-events: none;
+  animation: atmosphereShift 20s ease-in-out infinite alternate;
+}
+
+@keyframes atmosphereShift {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.8; transform: scale(1.05); }
+}
+
+/* Floating orbs for depth */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  animation: float 15s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 400px;
+  height: 400px;
+  background: rgba(59, 130, 246, 0.15);
+  top: -100px;
+  left: -100px;
+  animation-delay: 0s;
+}
+
+.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: rgba(168, 85, 247, 0.12);
+  bottom: -50px;
+  right: -50px;
+  animation-delay: -5s;
+}
+
+.orb-3 {
+  width: 200px;
+  height: 200px;
+  background: rgba(245, 158, 11, 0.10);
+  top: 50%;
+  right: 20%;
+  animation-delay: -10s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+/* Glass card with enhanced depth */
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  transition: all 0.2s ease-out;
+  border-radius: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 2px 20px rgba(0, 0, 0, 0.3);
 }
 
 .glass:hover {
   background: var(--glass-hover);
   border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .glass:active {
-  transform: scale(0.98);
+  transform: scale(0.98) translateY(0);
 }
 
-/* Glass pill (smaller, like category buttons) */
+/* Glass pill with glow */
 .glass-pill {
   background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
   border: 1px solid var(--glass-border);
   border-radius: 100px;
-  transition: all 0.2s ease-out;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-pill:hover {
   background: var(--glass-hover);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
 }
 
-/* Specular highlight effect (top edge glow) */
+/* Specular highlight (top shine) */
 .specular {
   position: relative;
+  overflow: hidden;
 }
 
 .specular::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 10%;
-  right: 10%;
+  left: 5%;
+  right: 5%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 30%,
+    rgba(255, 255, 255, 0.3) 70%,
+    transparent 100%
+  );
   border-radius: 100px;
 }
 
-/* Active card state (like selected light in Home app) */
+/* Active state - bright and alive */
 .glass-active {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   color: #0a0a0a;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+    0 4px 24px rgba(255, 255, 255, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .glass-active:hover {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
+  transform: translateY(-2px);
+}
+
+/* Featured card glow effect */
+.featured-glow {
+  position: relative;
+}
+
+.featured-glow::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 26px;
+  background: linear-gradient(135deg,
+    rgba(245, 158, 11, 0.3) 0%,
+    rgba(245, 158, 11, 0) 50%,
+    rgba(59, 130, 246, 0.2) 100%
+  );
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.featured-glow:hover::after {
+  opacity: 1;
+}
+
+/* Page load animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+}
+
+.animate-slide-in {
+  animation: slideInFromBottom 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+}
+
+/* Stagger delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }
+
+/* Title gradient effect */
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Icon glow on hover */
+.icon-glow {
+  transition: filter 0.3s ease;
+}
+
+.icon-glow:hover {
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+/* Noise texture overlay for depth */
+.noise-overlay::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.015;
+  pointer-events: none;
+  z-index: 100;
 }

@@ -71,11 +71,11 @@ export function GlassCard({
 
   if (href) {
     return (
-      <Link href={href} className={`block ${wrapperClasses}`}>
+      <Link href={href} className="block h-full">
         {content}
       </Link>
     );
   }
 
-  return <div className={wrapperClasses}>{content}</div>;
+  return content;
 }
