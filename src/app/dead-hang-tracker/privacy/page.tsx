@@ -77,8 +77,8 @@ export default function PrivacyPolicy() {
               <h2 className="text-xl font-semibold text-white mb-3">Contact</h2>
               <p className="text-zinc-300 leading-relaxed">
                 If you have any questions about this privacy policy, please contact us at{" "}
-                <a href="mailto:support@scottd3v.com" className="text-blue-400 hover:text-blue-300">
-                  support@scottd3v.com
+                <a href="mailto:scottd3v@gmail.com" className="text-blue-400 hover:text-blue-300">
+                  scottd3v@gmail.com
                 </a>
               </p>
             </section>

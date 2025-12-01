@@ -29,11 +29,11 @@ export default function Support() {
 
           {/* Contact Options */}
           <div className="grid gap-4 mb-10">
-            <a href="mailto:support@scottd3v.com">
+            <a href="mailto:scottd3v@gmail.com">
               <GlassCard
                 icon={<span className="text-2xl">✉️</span>}
                 title="Email Support"
-                subtitle="support@scottd3v.com"
+                subtitle="scottd3v@gmail.com"
                 size="wide"
               />
             </a>
