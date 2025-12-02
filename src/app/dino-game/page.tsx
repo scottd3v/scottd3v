@@ -45,6 +45,39 @@ const DEFAULT_SETTINGS: PlayerSettings = {
   highScore: 0,
 };
 
+const DEFAULT_PIN = '1234';
+
+// Helper to get/set parent PIN
+const getParentPin = (): string => {
+  if (typeof window === 'undefined') return DEFAULT_PIN;
+  return localStorage.getItem('dino-parent-pin') || DEFAULT_PIN;
+};
+
+const setParentPinStorage = (pin: string) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('dino-parent-pin', pin);
+};
+
+// Helper to get/set lockout time
+const getLockoutTime = (): number => {
+  if (typeof window === 'undefined') return 0;
+  return parseInt(localStorage.getItem('dino-lockout') || '0', 10);
+};
+
+const setLockoutTime = (time: number) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('dino-lockout', time.toString());
+};
+
+// Scary messages for when kids try to hack
+const SCARY_MESSAGES = [
+  "ALERT: Suspicious activity detected...",
+  "Sending notification to Mom and Dad...",
+  "Recording screen activity...",
+  "Saving evidence...",
+  "Parents will be notified in:",
+];
+
 // Helper to get today's date string
 const getTodayString = () => new Date().toISOString().split('T')[0];
 
@@ -76,6 +109,16 @@ export default function DinoGamePage() {
   const [parentClickCount, setParentClickCount] = useState(0);
   const [parentPin, setParentPin] = useState('');
   const [pinError, setPinError] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [showScareScreen, setShowScareScreen] = useState(false);
+  const [scareCountdown, setScareCountdown] = useState(10);
+  const [scareMessageIndex, setScareMessageIndex] = useState(0);
+  const [isLockedOut, setIsLockedOut] = useState(false);
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+  const [pinVerified, setPinVerified] = useState(false);
+  const [showChangePinModal, setShowChangePinModal] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
   const [gameState, setGameState] = useState<GameState>({
     isRunning: false,
     isGameOver: false,
@@ -95,6 +138,60 @@ export default function DinoGamePage() {
   const gameLoopRef = useRef<number | null>(null);
   const lastObstacleRef = useRef<number>(0);
   const parentClickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check for lockout on mount and when opening parent mode
+  useEffect(() => {
+    const checkLockout = () => {
+      const lockoutUntil = getLockoutTime();
+      const now = Date.now();
+      if (lockoutUntil > now) {
+        setIsLockedOut(true);
+        setLockoutRemaining(Math.ceil((lockoutUntil - now) / 1000));
+      } else {
+        setIsLockedOut(false);
+        setLockoutRemaining(0);
+      }
+    };
+
+    checkLockout();
+    const interval = setInterval(checkLockout, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle scare screen countdown
+  useEffect(() => {
+    if (!showScareScreen) return;
+
+    // Progress through scary messages
+    const messageInterval = setInterval(() => {
+      setScareMessageIndex((prev) => Math.min(prev + 1, SCARY_MESSAGES.length - 1));
+    }, 1500);
+
+    // Countdown timer
+    const countdownInterval = setInterval(() => {
+      setScareCountdown((prev) => {
+        if (prev <= 1) {
+          // Lock out for 2 minutes
+          const lockoutUntil = Date.now() + 2 * 60 * 1000;
+          setLockoutTime(lockoutUntil);
+          setIsLockedOut(true);
+          setLockoutRemaining(120);
+          setShowScareScreen(false);
+          setShowParentMode(false);
+          setScareCountdown(10);
+          setScareMessageIndex(0);
+          setFailedAttempts(0);
+          return 10;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(messageInterval);
+      clearInterval(countdownInterval);
+    };
+  }, [showScareScreen]);
 
   // Select player and load their settings
   const selectPlayer = useCallback((player: 'hank' | 'danny') => {
@@ -128,29 +225,43 @@ export default function DinoGamePage() {
     }
   };
 
-  // Verify parent PIN (simple: 1234)
+  // Verify parent PIN
   const verifyPin = () => {
-    if (parentPin === '1234') {
+    const correctPin = getParentPin();
+    if (parentPin === correctPin) {
       setPinError(false);
+      setPinVerified(true);
+      setFailedAttempts(0);
       return true;
     }
+
+    // Wrong PIN!
     setPinError(true);
+    const newFailedAttempts = failedAttempts + 1;
+    setFailedAttempts(newFailedAttempts);
+
+    // After 3 failed attempts, trigger scare screen
+    if (newFailedAttempts >= 3) {
+      setShowScareScreen(true);
+      setScareCountdown(10);
+      setScareMessageIndex(0);
+    }
+
     return false;
   };
 
-  // Save parent settings
-  const saveParentSettings = (newLimit: number, newDifficulty: 'easy' | 'medium' | 'hard') => {
-    if (!verifyPin() || !currentPlayer) return;
-
-    const newSettings = {
-      ...settings,
-      dailyLimit: newLimit,
-      difficulty: newDifficulty,
-    };
-    setSettings(newSettings);
-    savePlayerSettings(currentPlayer, newSettings);
-    setShowParentMode(false);
-    setParentPin('');
+  // Change PIN
+  const changePin = () => {
+    if (newPin.length !== 4 || !/^\d+$/.test(newPin)) {
+      return; // PIN must be 4 digits
+    }
+    if (newPin !== confirmPin) {
+      return; // PINs must match
+    }
+    setParentPinStorage(newPin);
+    setShowChangePinModal(false);
+    setNewPin('');
+    setConfirmPin('');
   };
 
   // Reset attempts (parent only)
@@ -605,94 +716,242 @@ export default function DinoGamePage() {
           <p className="mt-1">Jump over the cacti and birds!</p>
         </div>
 
+        {/* Scare Screen - shown when kids try wrong PIN too many times */}
+        {showScareScreen && (
+          <div className="fixed inset-0 bg-red-900/95 flex items-center justify-center z-[100] p-4 animate-pulse">
+            <div className="text-center max-w-md">
+              <div className="text-8xl mb-6 animate-bounce">
+                {scareMessageIndex < 3 ? '🚨' : '👀'}
+              </div>
+              <div className="text-red-200 text-xl font-bold mb-4 min-h-[60px]">
+                {SCARY_MESSAGES[scareMessageIndex]}
+              </div>
+              {scareMessageIndex >= SCARY_MESSAGES.length - 1 && (
+                <div className="text-6xl font-bold text-white animate-pulse">
+                  {scareCountdown}
+                </div>
+              )}
+              <div className="mt-8 text-red-300 text-sm">
+                Nice try! But this is for parents only.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Parent Mode Modal */}
-        {showParentMode && (
+        {showParentMode && !showScareScreen && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="glass p-8 max-w-md w-full animate-fade-in-scale">
+            <div className="glass p-8 max-w-md w-full animate-fade-in-scale max-h-[90vh] overflow-y-auto">
               <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6 text-center">
                 Parent Controls
               </h2>
 
-              <div className="mb-6">
+              {/* Lockout message */}
+              {isLockedOut && (
+                <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-center">
+                  <div className="text-4xl mb-2">🔒</div>
+                  <div className="text-red-400 font-bold">Access Locked</div>
+                  <div className="text-red-300 text-sm mt-1">
+                    Too many wrong attempts. Try again in {Math.floor(lockoutRemaining / 60)}:{(lockoutRemaining % 60).toString().padStart(2, '0')}
+                  </div>
+                </div>
+              )}
+
+              {/* PIN Entry - only show if not verified and not locked out */}
+              {!pinVerified && !isLockedOut && (
+                <div className="mb-6">
+                  <label className="block text-sm text-[var(--text-secondary)] mb-2">
+                    Enter PIN {failedAttempts > 0 && <span className="text-red-400">({3 - failedAttempts} attempts left)</span>}
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    value={parentPin}
+                    onChange={(e) => { setParentPin(e.target.value.replace(/\D/g, '')); setPinError(false); }}
+                    className={`w-full bg-[var(--glass-bg)] border ${pinError ? 'border-red-500' : 'border-[var(--glass-border)]'} rounded-lg px-4 py-3 text-[var(--text-primary)] text-center text-2xl tracking-widest focus:outline-none focus:border-[var(--accent-blue)]`}
+                    placeholder="••••"
+                    maxLength={4}
+                  />
+                  {pinError && (
+                    <p className="text-red-500 text-sm mt-1 text-center">
+                      Wrong PIN! {failedAttempts >= 2 ? '⚠️ Last chance!' : 'Try again.'}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => verifyPin()}
+                    disabled={parentPin.length !== 4}
+                    className="w-full mt-3 py-3 px-4 rounded-lg bg-[var(--accent-blue)] text-white font-medium hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Unlock
+                  </button>
+                </div>
+              )}
+
+              {/* Settings - only show if PIN verified */}
+              {pinVerified && (
+                <>
+                  <div className="mb-6">
+                    <label className="block text-sm text-[var(--text-secondary)] mb-2">
+                      Daily Play Limit: <span className="text-[var(--accent-gold)]">{settings.dailyLimit}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      value={settings.dailyLimit}
+                      onChange={(e) => setSettings({ ...settings, dailyLimit: parseInt(e.target.value) })}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-[var(--text-secondary)]">
+                      <span>0 (No plays)</span>
+                      <span>50</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-sm text-[var(--text-secondary)] mb-2">
+                      Difficulty
+                    </label>
+                    <div className="flex gap-2">
+                      {(['easy', 'medium', 'hard'] as const).map((diff) => (
+                        <button
+                          key={diff}
+                          onClick={() => setSettings({ ...settings, difficulty: diff })}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                            settings.difficulty === diff
+                              ? 'bg-[var(--accent-blue)] text-white'
+                              : 'bg-[var(--glass-bg)] text-[var(--text-secondary)] hover:bg-[var(--glass-hover)]'
+                          }`}
+                        >
+                          {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mb-6 p-4 bg-[var(--glass-bg)] rounded-lg">
+                    <div className="text-sm text-[var(--text-secondary)]">
+                      Today&apos;s attempts: <span className="text-[var(--text-primary)] font-bold">{settings.attemptsToday}</span>
+                    </div>
+                    <button
+                      onClick={resetAttempts}
+                      className="text-sm text-[var(--accent-blue)] hover:underline mt-2"
+                    >
+                      Reset today&apos;s count
+                    </button>
+                  </div>
+
+                  <div className="mb-6">
+                    <button
+                      onClick={() => setShowChangePinModal(true)}
+                      className="w-full py-2 px-4 rounded-lg bg-[var(--glass-bg)] text-[var(--text-secondary)] hover:bg-[var(--glass-hover)] transition-all text-sm"
+                    >
+                      🔐 Change Parent PIN
+                    </button>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setShowParentMode(false);
+                        setParentPin('');
+                        setPinError(false);
+                        setPinVerified(false);
+                        setFailedAttempts(0);
+                      }}
+                      className="flex-1 py-3 px-4 rounded-lg bg-[var(--glass-bg)] text-[var(--text-secondary)] hover:bg-[var(--glass-hover)] transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (currentPlayer) {
+                          savePlayerSettings(currentPlayer, settings);
+                          setShowParentMode(false);
+                          setParentPin('');
+                          setPinVerified(false);
+                          setFailedAttempts(0);
+                        }
+                      }}
+                      className="flex-1 py-3 px-4 rounded-lg bg-[var(--accent-green)] text-white font-medium hover:opacity-90 transition-all"
+                    >
+                      Save Settings
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Close button for locked out state */}
+              {(isLockedOut || (!pinVerified && !isLockedOut)) && (
+                <button
+                  onClick={() => {
+                    setShowParentMode(false);
+                    setParentPin('');
+                    setPinError(false);
+                  }}
+                  className="w-full mt-4 py-3 px-4 rounded-lg bg-[var(--glass-bg)] text-[var(--text-secondary)] hover:bg-[var(--glass-hover)] transition-all"
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Change PIN Modal */}
+        {showChangePinModal && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
+            <div className="glass p-6 max-w-sm w-full animate-fade-in-scale">
+              <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4 text-center">
+                Change PIN
+              </h3>
+
+              <div className="mb-4">
                 <label className="block text-sm text-[var(--text-secondary)] mb-2">
-                  Enter PIN (hint: 1234)
+                  New PIN (4 digits)
                 </label>
                 <input
                   type="password"
-                  value={parentPin}
-                  onChange={(e) => { setParentPin(e.target.value); setPinError(false); }}
-                  className={`w-full bg-[var(--glass-bg)] border ${pinError ? 'border-red-500' : 'border-[var(--glass-border)]'} rounded-lg px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-blue)]`}
-                  placeholder="Enter PIN"
+                  inputMode="numeric"
+                  value={newPin}
+                  onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                  className="w-full bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-lg px-4 py-3 text-[var(--text-primary)] text-center text-2xl tracking-widest focus:outline-none focus:border-[var(--accent-blue)]"
+                  placeholder="••••"
                   maxLength={4}
                 />
-                {pinError && (
-                  <p className="text-red-500 text-sm mt-1">Incorrect PIN</p>
-                )}
               </div>
 
               <div className="mb-6">
                 <label className="block text-sm text-[var(--text-secondary)] mb-2">
-                  Daily Play Limit: <span className="text-[var(--accent-gold)]">{settings.dailyLimit}</span>
+                  Confirm PIN
                 </label>
                 <input
-                  type="range"
-                  min="0"
-                  max="50"
-                  value={settings.dailyLimit}
-                  onChange={(e) => setSettings({ ...settings, dailyLimit: parseInt(e.target.value) })}
-                  className="w-full"
+                  type="password"
+                  inputMode="numeric"
+                  value={confirmPin}
+                  onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                  className={`w-full bg-[var(--glass-bg)] border ${confirmPin.length === 4 && newPin !== confirmPin ? 'border-red-500' : 'border-[var(--glass-border)]'} rounded-lg px-4 py-3 text-[var(--text-primary)] text-center text-2xl tracking-widest focus:outline-none focus:border-[var(--accent-blue)]`}
+                  placeholder="••••"
+                  maxLength={4}
                 />
-                <div className="flex justify-between text-xs text-[var(--text-secondary)]">
-                  <span>0 (No plays)</span>
-                  <span>50</span>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm text-[var(--text-secondary)] mb-2">
-                  Difficulty
-                </label>
-                <div className="flex gap-2">
-                  {(['easy', 'medium', 'hard'] as const).map((diff) => (
-                    <button
-                      key={diff}
-                      onClick={() => setSettings({ ...settings, difficulty: diff })}
-                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                        settings.difficulty === diff
-                          ? 'bg-[var(--accent-blue)] text-white'
-                          : 'bg-[var(--glass-bg)] text-[var(--text-secondary)] hover:bg-[var(--glass-hover)]'
-                      }`}
-                    >
-                      {diff.charAt(0).toUpperCase() + diff.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-6 p-4 bg-[var(--glass-bg)] rounded-lg">
-                <div className="text-sm text-[var(--text-secondary)]">
-                  Today&apos;s attempts: <span className="text-[var(--text-primary)] font-bold">{settings.attemptsToday}</span>
-                </div>
-                <button
-                  onClick={resetAttempts}
-                  className="text-sm text-[var(--accent-blue)] hover:underline mt-2"
-                >
-                  Reset today&apos;s count
-                </button>
+                {confirmPin.length === 4 && newPin !== confirmPin && (
+                  <p className="text-red-500 text-sm mt-1 text-center">PINs don&apos;t match</p>
+                )}
               </div>
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => { setShowParentMode(false); setParentPin(''); setPinError(false); }}
+                  onClick={() => { setShowChangePinModal(false); setNewPin(''); setConfirmPin(''); }}
                   className="flex-1 py-3 px-4 rounded-lg bg-[var(--glass-bg)] text-[var(--text-secondary)] hover:bg-[var(--glass-hover)] transition-all"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => saveParentSettings(settings.dailyLimit, settings.difficulty)}
-                  className="flex-1 py-3 px-4 rounded-lg bg-[var(--accent-green)] text-white font-medium hover:opacity-90 transition-all"
+                  onClick={changePin}
+                  disabled={newPin.length !== 4 || newPin !== confirmPin}
+                  className="flex-1 py-3 px-4 rounded-lg bg-[var(--accent-green)] text-white font-medium hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Save Settings
+                  Save PIN
                 </button>
               </div>
             </div>
