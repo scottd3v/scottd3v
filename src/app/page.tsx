@@ -43,8 +43,20 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Dino Jump Game */}
+          <div className="animate-slide-in delay-300">
+            <GlassCard
+              href="/dino-game"
+              icon={
+                <span className="text-5xl">🦖</span>
+              }
+              title="Dino Jump"
+              subtitle="A fun jumping game for Hank & Danny"
+            />
+          </div>
+
           {/* Contact - Direct email link */}
-          <div className="animate-slide-in delay-400">
+          <div className="animate-slide-in delay-500">
             <a
               href="mailto:scottd3v@gmail.com"
               className="block"
@@ -80,7 +92,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-center text-zinc-600 text-sm relative z-10 animate-fade-in delay-600">
+      <footer className="py-6 text-center text-zinc-600 text-sm relative z-10 animate-fade-in delay-700">
         <p>© 2025 Scott Reed</p>
       </footer>
     </div>
