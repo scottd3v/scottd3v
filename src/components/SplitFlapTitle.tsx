@@ -121,7 +121,7 @@ export default function SplitFlapTitle() {
         .split-flap-inner {
           display: flex;
           justify-content: center;
-          padding: 8px 12px;
+          padding: 8px 10px;
           background: linear-gradient(180deg, #1f1f1f 0%, #181818 100%);
           border-radius: 10px;
           box-shadow:
@@ -129,34 +129,29 @@ export default function SplitFlapTitle() {
             inset 0 1px 0 rgba(255, 255, 255, 0.03);
           border: 1px solid rgba(255, 255, 255, 0.06);
           max-width: 100%;
+          overflow: hidden;
         }
 
-        /* Override library styles */
-        .split-flap-inner .split-flap {
-          gap: 1px;
+        /* Override the library's font-size on .split-flap-display.medium */
+        .split-flap-inner .split-flap-display.medium {
+          font-size: 14px !important;
+          gap: 1px !important;
         }
 
-        /* Flap cards - warm off-white on dark */
-        .split-flap-inner [class*="flap"],
-        .split-flap-inner [class*="Flap"] {
-          background: linear-gradient(180deg, #2d2d2d 0%, #2d2d2d 49.5%, #252525 50.5%, #252525 100%) !important;
+        .split-flap-inner .split-flap-digit {
+          background: #2a2a2a !important;
           color: #e8e4de !important;
           border-radius: 3px !important;
-          font-family: 'SF Mono', 'Roboto Mono', 'JetBrains Mono', monospace !important;
-          font-weight: 500 !important;
-          letter-spacing: 0.01em;
         }
 
-        /* Mobile: smaller flaps */
-        .split-flap-inner .flap-digit {
-          font-size: 0.75rem !important;
-          min-width: 0.7em !important;
+        .split-flap-inner .split-flap-part {
+          background: linear-gradient(180deg, #2d2d2d 0%, #2d2d2d 49.5%, #252525 50.5%, #252525 100%) !important;
+          border-color: #333 !important;
         }
 
-        /* Scaled down for long titles on mobile */
-        .split-flap-scaled .flap-digit {
-          font-size: 0.65rem !important;
-          min-width: 0.6em !important;
+        /* Scaled class for long titles */
+        .split-flap-scaled .split-flap-display.medium {
+          font-size: 12px !important;
         }
 
         /* Tablet and up */
@@ -166,18 +161,13 @@ export default function SplitFlapTitle() {
             border-radius: 12px;
           }
 
-          .split-flap-inner .split-flap {
-            gap: 2px;
+          .split-flap-inner .split-flap-display.medium {
+            font-size: 20px !important;
+            gap: 2px !important;
           }
 
-          .split-flap-inner .flap-digit {
-            font-size: 0.95rem !important;
-            min-width: 0.85em !important;
-          }
-
-          .split-flap-scaled .flap-digit {
-            font-size: 0.85rem !important;
-            min-width: 0.75em !important;
+          .split-flap-scaled .split-flap-display.medium {
+            font-size: 16px !important;
           }
         }
 
@@ -188,18 +178,13 @@ export default function SplitFlapTitle() {
             border-radius: 14px;
           }
 
-          .split-flap-inner .split-flap {
-            gap: 3px;
+          .split-flap-inner .split-flap-display.medium {
+            font-size: 32px !important;
+            gap: 3px !important;
           }
 
-          .split-flap-inner .flap-digit {
-            font-size: 1.35rem !important;
-            min-width: 0.95em !important;
-          }
-
-          .split-flap-scaled .flap-digit {
-            font-size: 1.1rem !important;
-            min-width: 0.85em !important;
+          .split-flap-scaled .split-flap-display.medium {
+            font-size: 26px !important;
           }
         }
       `}</style>
