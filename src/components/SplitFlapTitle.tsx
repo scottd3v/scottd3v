@@ -6,16 +6,12 @@ import { SplitFlap, Presets } from 'react-split-flap';
 // Default titles - can be overridden via localStorage from dad portal
 const DEFAULT_TITLES = [
   'Product Engineer',
-  'Builder',
-  'Maker',
-  'Prompt-Driven Engineer',
   'Full Stack Creator',
   'Zero-to-One Builder',
   'Software Futurist',
   'Pizza Chef',
   'Dad',
-  'Pickleball Player',
-  'Swimmer',
+  'Software Seuss',
 ];
 
 const STORAGE_KEY = 'scottd3v-titles';
