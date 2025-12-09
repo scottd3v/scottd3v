@@ -84,6 +84,18 @@ export default function Support() {
                 or by uninstalling and reinstalling the app.
               </p>
             </div>
+
+            <div>
+              <h3 className="text-lg font-medium text-white mb-2">
+                I denied Health data access. How do I fix it?
+              </h3>
+              <p className="text-zinc-300 leading-relaxed">
+                If you declined to share Health data when first prompted, the app
+                won&apos;t ask again. The only way to fix this is to uninstall the app
+                and reinstall it. On the fresh install, you&apos;ll get the Health
+                permissions prompt again.
+              </p>
+            </div>
           </div>
         </div>
       </main>

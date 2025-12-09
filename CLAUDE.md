@@ -1,13 +1,17 @@
-# scottd3v.com
+# CLAUDE.md
 
-Personal developer site for Scott Reed, hosted on Cloudflare Pages.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Personal developer site for Scott Reed, hosted on Cloudflare Pages at scottd3v.com.
 
 ## Tech Stack
 
 - **Framework:** Next.js 16 with App Router
 - **Styling:** Tailwind CSS 4
 - **Language:** TypeScript
-- **Hosting:** Cloudflare Pages (domain: scottd3v.com)
+- **Hosting:** Cloudflare Pages (via @cloudflare/next-on-pages)
 
 ## Project Structure
 
@@ -94,18 +98,33 @@ npm run dev      # Start dev server (localhost:3000)
 npm run build    # Production build
 npm run start    # Start production server
 npm run lint     # Run ESLint
+
+# Cloudflare Pages deployment (auto-deploys on push to main)
+npx @cloudflare/next-on-pages  # Build for Cloudflare
 ```
+
+## Architecture Notes
+
+**Components:** Barrel exported from `src/components/index.ts`. Import shared components via `@/components`:
+```typescript
+import { GlassCard, GlassPill } from "@/components";
+```
+
+**Client Components:** Pages using React hooks (useState, useEffect) or browser APIs (localStorage, sessionStorage) must have `'use client'` directive.
+
+**Special Dependencies:**
+- `react-split-flap` - Animated split-flap display on homepage
 
 ## Design System
 
-The site uses a custom dark theme with glass morphism effects:
-- CSS variables for colors (`--text-primary`, `--accent-blue`, etc.)
+Dark theme with glass morphism effects:
+- CSS variables defined in `globals.css` (`--text-primary`, `--accent-coral`, `--accent-teal`, etc.)
 - Glass card components with blur and specular highlights
 - Animated gradient background with floating orbs
 
 ## Deployment
 
-Deployed automatically to Cloudflare Pages. The `wrangler` dev dependency is included for Cloudflare tooling.
+Auto-deploys to Cloudflare Pages on push to main. The `wrangler` dev dependency is included for Cloudflare tooling.
 
 ## Easter Eggs Reference
 

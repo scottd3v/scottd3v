@@ -108,16 +108,14 @@ export default function Home() {
             />
           </div>
 
-          {/* Contact - Direct email link */}
+          {/* Contact */}
           <div className="animate-slide-in delay-700">
-            <a
-              href="mailto:scottd3v@gmail.com"
-              className="block"
-            >
-              <div className="glass specular p-5 min-h-[100px] flex items-center gap-4 hover:bg-white/[0.08] transition-colors">
+            <div className="glass specular p-5 min-h-[100px]">
+              <div className="flex items-center gap-4 mb-4">
                 <div className="text-3xl icon-glow">
                   <svg
-                    className="w-10 h-10 text-blue-400"
+                    className="w-10 h-10"
+                    style={{ color: 'var(--accent-coral)' }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -131,15 +129,39 @@ export default function Home() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-base text-white">
+                  <h3 className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
                     Contact
                   </h3>
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     scottd3v@gmail.com
                   </p>
                 </div>
               </div>
-            </a>
+              <div className="flex gap-3">
+                <a
+                  href="mailto:scottd3v@gmail.com"
+                  className="flex-1 py-2 px-4 rounded-lg text-center text-sm font-medium transition-colors"
+                  style={{
+                    backgroundColor: 'var(--accent-coral)',
+                    color: 'var(--background)'
+                  }}
+                >
+                  Open Mail Client
+                </a>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('scottd3v@gmail.com');
+                  }}
+                  className="flex-1 py-2 px-4 rounded-lg text-center text-sm font-medium transition-colors border"
+                  style={{
+                    borderColor: 'var(--accent-teal)',
+                    color: 'var(--accent-teal)'
+                  }}
+                >
+                  Copy Email
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </main>
