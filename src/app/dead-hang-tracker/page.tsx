@@ -1,10 +1,32 @@
 import Link from "next/link";
 import Image from "next/image";
 
-export const metadata = {
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  metadataBase: new URL("https://scottd3v.com"),
   title: "Dead Hang Tracker - iOS & watchOS App",
   description:
     "Decompress your spine. Decompress your life. One minute a day keeps the back pain away.",
+  openGraph: {
+    title: "Dead Hang Tracker",
+    description: "Decompress your spine. Decompress your life.",
+    images: [
+      {
+        url: "/dead-hang-icon.png",
+        width: 512,
+        height: 512,
+        alt: "Dead Hang Tracker app icon",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Dead Hang Tracker",
+    description: "Decompress your spine. Decompress your life.",
+    images: ["/dead-hang-icon.png"],
+  },
 };
 
 // Feature card component
