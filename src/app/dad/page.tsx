@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { saveTitles, getStoredTitles, getDefaultTitles } from '@/components/SplitFlapTitle';
 
 // Types
@@ -79,6 +79,8 @@ export default function DadPage() {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [showWords, setShowWords] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
 
   // Kid stats
   const [dannyStats, setDannyStats] = useState<KidStats | null>(null);
@@ -153,19 +155,32 @@ export default function DadPage() {
       const transcript = event.results[0][0].transcript;
       setMagicWords(transcript);
       setIsListening(false);
+      recognitionRef.current = null;
     };
 
     recognition.onerror = () => {
       setIsListening(false);
+      recognitionRef.current = null;
       setAuthError('Could not hear you. Try again.');
       setTimeout(() => setAuthError(''), 2000);
     };
 
     recognition.onend = () => {
       setIsListening(false);
+      recognitionRef.current = null;
     };
 
+    recognitionRef.current = recognition;
     recognition.start();
+  };
+
+  // Stop listening for speech
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
   };
 
   // Update kid settings
@@ -268,68 +283,111 @@ export default function DadPage() {
           {authStep === 'words' ? (
             // Step 1: The Magic Words
             <div className="text-center animate-fade-in w-full">
-              <p className="text-[var(--accent-teal)] text-sm italic mb-6">
-                Whisper your words to the Seuss...
-              </p>
 
-              {/* Microphone button - the main interaction */}
-              {speechSupported && (
-                <button
-                  onClick={startListening}
-                  disabled={isListening}
-                  className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 transition-all ${
-                    isListening
-                      ? 'bg-[var(--accent-coral)] scale-110 animate-pulse'
-                      : 'bg-[var(--accent-coral)]/20 hover:bg-[var(--accent-coral)]/30 active:scale-95'
-                  } border-2 border-[var(--accent-coral)]/50`}
-                >
-                  <span className="text-3xl">{isListening ? '👂' : '🎤'}</span>
-                </button>
-              )}
+              {/* STATE: No words captured yet */}
+              {!magicWords && !isListening && (
+                <>
+                  <p className="text-[var(--accent-teal)] text-sm italic mb-8">
+                    Whisper your words to the Seuss...
+                  </p>
 
-              {isListening && (
-                <p className="text-[var(--accent-coral)] text-sm mb-4 animate-pulse">
-                  Listening...
-                </p>
-              )}
+                  {/* Big mic button - idle state */}
+                  {speechSupported && (
+                    <button
+                      onClick={startListening}
+                      className="relative w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 bg-[var(--accent-coral)]/20 hover:bg-[var(--accent-coral)]/30 active:scale-95 border-2 border-[var(--accent-coral)]/50 transition-all group"
+                    >
+                      <span className="text-4xl group-hover:scale-110 transition-transform">🎤</span>
+                    </button>
+                  )}
+                  <p className="text-[var(--text-muted)] text-sm mb-6">
+                    {speechSupported ? 'Tap to speak' : 'Type your phrase below'}
+                  </p>
 
-              {/* Words display - masked by default */}
-              {magicWords && (
-                <div className="relative mb-4">
-                  <div className="text-center text-[var(--text-primary)] text-lg py-2">
-                    {showWords ? magicWords : '• • •'}
+                  {/* Text input fallback */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={magicWords}
+                      onChange={(e) => { setMagicWords(e.target.value); setAuthError(''); }}
+                      onKeyDown={(e) => e.key === 'Enter' && verifyMagicWords()}
+                      placeholder={speechSupported ? "or type here..." : "Type your phrase..."}
+                      enterKeyHint="done"
+                      className="w-full bg-transparent border-b-2 border-[var(--accent-coral)]/30 focus:border-[var(--accent-coral)] px-4 py-3 text-center text-[var(--text-primary)] text-lg placeholder-[var(--text-muted)]/50 outline-none transition-colors"
+                    />
                   </div>
-                  <button
-                    onClick={() => setShowWords(!showWords)}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors p-2"
-                    type="button"
-                  >
-                    {showWords ? '🙈' : '👁️'}
-                  </button>
-                </div>
+                </>
               )}
 
-              {/* Text input as fallback - hidden when words are captured */}
-              {!magicWords && (
-                <input
-                  type="text"
-                  value={magicWords}
-                  onChange={(e) => { setMagicWords(e.target.value); setAuthError(''); }}
-                  onKeyDown={(e) => e.key === 'Enter' && verifyMagicWords()}
-                  placeholder={speechSupported ? "or type here..." : "Type here..."}
-                  enterKeyHint="done"
-                  className="w-full bg-transparent border-b-2 border-[var(--accent-coral)]/30 focus:border-[var(--accent-coral)] px-4 py-3 text-center text-[var(--text-primary)] text-lg placeholder-[var(--text-muted)]/50 outline-none transition-colors"
-                />
+              {/* STATE: Listening */}
+              {isListening && (
+                <>
+                  <p className="text-[var(--accent-coral)] text-sm italic mb-6 animate-pulse">
+                    I&apos;m listening...
+                  </p>
+
+                  {/* Animated listening button with rings */}
+                  <div className="relative w-32 h-32 mx-auto mb-4">
+                    {/* Pulsing rings */}
+                    <div className="absolute inset-0 rounded-full border-2 border-[var(--accent-coral)]/30 animate-ping" />
+                    <div className="absolute inset-2 rounded-full border-2 border-[var(--accent-coral)]/40 animate-ping" style={{ animationDelay: '0.2s' }} />
+                    <div className="absolute inset-4 rounded-full border-2 border-[var(--accent-coral)]/50 animate-ping" style={{ animationDelay: '0.4s' }} />
+
+                    {/* Center button - tap to stop */}
+                    <button
+                      onClick={stopListening}
+                      className="absolute inset-6 rounded-full bg-[var(--accent-coral)] flex items-center justify-center shadow-lg shadow-[var(--accent-coral)]/30 active:scale-95 transition-transform"
+                    >
+                      <span className="text-3xl">👂</span>
+                    </button>
+                  </div>
+
+                  <p className="text-[var(--text-muted)] text-sm">
+                    Tap to stop
+                  </p>
+                </>
               )}
 
-              {/* Clear button when words are captured */}
-              {magicWords && (
-                <button
-                  onClick={() => { setMagicWords(''); setShowWords(false); }}
-                  className="text-[var(--text-muted)] text-xs hover:text-[var(--text-secondary)] transition-colors"
-                >
-                  Clear and try again
-                </button>
+              {/* STATE: Words captured */}
+              {magicWords && !isListening && (
+                <>
+                  <p className="text-[var(--accent-teal)] text-sm italic mb-6">
+                    Words captured!
+                  </p>
+
+                  {/* Word bubbles display */}
+                  <div className="flex flex-wrap justify-center gap-2 mb-4 min-h-[3rem]">
+                    {magicWords.split(' ').filter(w => w).map((word, i) => (
+                      <div
+                        key={i}
+                        className="px-4 py-2 rounded-full bg-[var(--accent-coral)]/20 border border-[var(--accent-coral)]/30 text-[var(--text-primary)]"
+                      >
+                        {showWords ? word : '•••'}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Word count */}
+                  <p className="text-[var(--text-muted)] text-xs mb-4">
+                    {magicWords.split(' ').filter(w => w).length} word{magicWords.split(' ').filter(w => w).length !== 1 ? 's' : ''} captured
+                  </p>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <button
+                      onClick={() => setShowWords(!showWords)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm"
+                    >
+                      {showWords ? '🙈 Hide' : '👁️ Reveal'}
+                    </button>
+                    <button
+                      onClick={() => { setMagicWords(''); setShowWords(false); }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm"
+                    >
+                      🔄 Clear
+                    </button>
+                  </div>
+                </>
               )}
 
               {authError && (
@@ -338,13 +396,15 @@ export default function DadPage() {
                 </p>
               )}
 
-              <button
-                onClick={verifyMagicWords}
-                disabled={!magicWords.trim()}
-                className="mt-8 px-8 py-3 rounded-full bg-[var(--accent-coral)]/10 border border-[var(--accent-coral)]/30 text-[var(--accent-coral)] hover:bg-[var(--accent-coral)]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                Enter
-              </button>
+              {/* Submit button - only show when words captured */}
+              {magicWords && !isListening && (
+                <button
+                  onClick={verifyMagicWords}
+                  className="mt-4 px-8 py-3 rounded-full bg-[var(--accent-coral)]/20 border border-[var(--accent-coral)]/50 text-[var(--accent-coral)] hover:bg-[var(--accent-coral)]/30 transition-all font-medium"
+                >
+                  Cast the spell ✨
+                </button>
+              )}
             </div>
           ) : (
             // Step 2: The Magic Date
