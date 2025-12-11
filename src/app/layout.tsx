@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "scottd3v - Apps & Projects",
   description: "Personal developer site by Scott Reed. iOS apps, games, and projects.",
   openGraph: {
-    title: "Apps & Projects",
+    title: "Software Seuss",
     description: "scottd3v.com",
     siteName: "scottd3v",
     images: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Apps & Projects",
+    title: "Software Seuss",
     description: "scottd3v.com",
     images: ["/og-scottd3v.png"],
   },

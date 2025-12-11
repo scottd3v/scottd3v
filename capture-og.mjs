@@ -81,7 +81,7 @@ const html = `
 
   <div class="container">
     <img src="data:image/svg+xml;base64,${readFileSync(join(__dirname, 'public/softwareseus.svg')).toString('base64')}" class="logo" alt="Software Seuss" />
-    <div class="title">Apps & Projects</div>
+    <div class="title">Software Seuss</div>
     <div class="subtitle">scottd3v.com</div>
   </div>
 </body>
