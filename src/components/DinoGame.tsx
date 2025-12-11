@@ -406,6 +406,35 @@ export default function DinoGame({
         style={{ maxWidth: '100%', height: 'auto' }}
       />
 
+      {/* Virtual Space Bar - Big and kid-friendly */}
+      {canPlay && (
+        <button
+          onClick={() => {
+            if (gameState === 'playing') {
+              jump();
+            } else {
+              startGame();
+            }
+          }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            if (gameState === 'playing') {
+              jump();
+            } else {
+              startGame();
+            }
+          }}
+          className="mt-4 w-full max-w-md mx-auto h-20 md:h-24 bg-[#2a2a2a] hover:bg-[#333] active:bg-[#1a1a1a] active:scale-[0.98] rounded-2xl border-2 border-[#444] shadow-[inset_0_-4px_0_#1a1a1a,0_4px_8px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_0_#1a1a1a] transition-all touch-manipulation select-none flex items-center justify-center gap-3"
+        >
+          <span className="text-[#8a8a8a] text-lg md:text-xl font-bold tracking-wider">
+            {gameState === 'playing' ? 'JUMP!' : gameState === 'dead' ? 'TRY AGAIN' : 'START'}
+          </span>
+          <span className="text-2xl md:text-3xl">
+            {gameState === 'playing' ? '🦘' : gameState === 'dead' ? '🔄' : '▶️'}
+          </span>
+        </button>
+      )}
+
       {/* No plays remaining message */}
       {!canPlay && gameState !== 'playing' && (
         <div className="mt-4 p-4 bg-[#1f1f1f] rounded-lg text-center border border-[#333] mx-4">
@@ -417,8 +446,8 @@ export default function DinoGame({
 
       {/* Instructions */}
       {canPlay && (
-        <p className="text-[#8a8a8a] text-sm mt-4 text-center">
-          Tap or press SPACE to jump!
+        <p className="text-[#8a8a8a] text-sm mt-3 text-center">
+          Press the big button to {gameState === 'playing' ? 'jump' : 'play'}! ⬆️
         </p>
       )}
 
