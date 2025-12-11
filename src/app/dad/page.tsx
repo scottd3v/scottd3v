@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { saveTitles, getStoredTitles, getDefaultTitles } from '@/components/SplitFlapTitle';
 
 // Types
@@ -19,43 +19,6 @@ interface EasterEgg {
   location: string;
   howTo: string;
 }
-
-// WebAuthn helpers
-const isWebAuthnSupported = () => {
-  return typeof window !== 'undefined' &&
-         window.PublicKeyCredential !== undefined &&
-         typeof window.PublicKeyCredential === 'function';
-};
-
-// Generate a random challenge
-const generateChallenge = () => {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return array;
-};
-
-// Convert ArrayBuffer to base64
-const bufferToBase64 = (buffer: ArrayBuffer): string => {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-};
-
-// Convert base64 to ArrayBuffer
-const base64ToBuffer = (base64: string): ArrayBuffer => {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes.buffer;
-};
-
-// Storage keys
-const WEBAUTHN_CREDENTIAL_KEY = 'dad-webauthn-credential';
 
 // The magic words (case-insensitive)
 const MAGIC_PHRASE = 'hop on pop';
@@ -106,10 +69,7 @@ const EASTER_EGGS: EasterEgg[] = [
 
 export default function DadPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [webAuthnSupported, setWebAuthnSupported] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   // Seussian auth state
   const [magicWords, setMagicWords] = useState('');
@@ -118,6 +78,7 @@ export default function DadPage() {
   const [showSparkles, setShowSparkles] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [showWords, setShowWords] = useState(false);
 
   // Kid stats
   const [dannyStats, setDannyStats] = useState<KidStats | null>(null);
@@ -127,12 +88,8 @@ export default function DadPage() {
   const [titles, setTitles] = useState<string[]>([]);
   const [newTitle, setNewTitle] = useState('');
 
-  // Check authentication status on mount
+  // Check for Web Speech API support on mount
   useEffect(() => {
-    setWebAuthnSupported(isWebAuthnSupported());
-    const credential = localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
-    setIsRegistered(!!credential);
-    // Check for Web Speech API support
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
     setSpeechSupported(!!(win.SpeechRecognition || win.webkitSpeechRecognition));
@@ -146,97 +103,6 @@ export default function DadPage() {
       setTitles(getStoredTitles());
     }
   }, [isAuthenticated]);
-
-  // Register WebAuthn credential
-  const registerWebAuthn = useCallback(async () => {
-    if (!isWebAuthnSupported()) {
-      setAuthError('WebAuthn is not supported on this device');
-      return;
-    }
-
-    setIsLoading(true);
-    setAuthError('');
-
-    try {
-      const challenge = generateChallenge();
-
-      const credential = await navigator.credentials.create({
-        publicKey: {
-          challenge,
-          rp: {
-            name: 'scottd3v Dad Portal',
-            id: window.location.hostname,
-          },
-          user: {
-            id: new TextEncoder().encode('dad-scottd3v'),
-            name: 'dad@scottd3v.com',
-            displayName: 'Dad',
-          },
-          pubKeyCredParams: [
-            { alg: -7, type: 'public-key' },   // ES256
-            { alg: -257, type: 'public-key' }, // RS256
-          ],
-          authenticatorSelection: {
-            // No authenticatorAttachment - allows passkeys to sync via iCloud Keychain
-            residentKey: 'required',        // Makes it a discoverable credential (passkey)
-            userVerification: 'required',
-          },
-          timeout: 60000,
-        },
-      }) as PublicKeyCredential;
-
-      if (credential) {
-        // Store credential ID for later authentication
-        const credentialId = bufferToBase64(credential.rawId);
-        localStorage.setItem(WEBAUTHN_CREDENTIAL_KEY, credentialId);
-        setIsRegistered(true);
-        setIsAuthenticated(true);
-      }
-    } catch (error) {
-      console.error('WebAuthn registration failed:', error);
-      setAuthError('Registration failed. Try using a passphrase instead.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Authenticate with WebAuthn
-  const authenticateWebAuthn = useCallback(async () => {
-    setIsLoading(true);
-    setAuthError('');
-
-    try {
-      const challenge = generateChallenge();
-      const storedCredentialId = localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
-
-      const assertion = await navigator.credentials.get({
-        publicKey: {
-          challenge,
-          rpId: window.location.hostname,
-          // If we have a stored credential ID, suggest it; otherwise allow any passkey for this site
-          allowCredentials: storedCredentialId ? [{
-            id: base64ToBuffer(storedCredentialId),
-            type: 'public-key',
-          }] : [],
-          userVerification: 'required',
-          timeout: 60000,
-        },
-      });
-
-      if (assertion) {
-        // Store the credential ID for future use (in case it was a discoverable credential)
-        const credentialId = bufferToBase64((assertion as PublicKeyCredential).rawId);
-        localStorage.setItem(WEBAUTHN_CREDENTIAL_KEY, credentialId);
-        setIsRegistered(true);
-        setIsAuthenticated(true);
-      }
-    } catch (error) {
-      console.error('WebAuthn authentication failed:', error);
-      setAuthError('Authentication failed. Try again or use passphrase.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   // Verify the magic words
   const verifyMagicWords = () => {
@@ -427,16 +293,44 @@ export default function DadPage() {
                 </p>
               )}
 
-              {/* Text input as fallback / display */}
-              <input
-                type="text"
-                value={magicWords}
-                onChange={(e) => { setMagicWords(e.target.value); setAuthError(''); }}
-                onKeyDown={(e) => e.key === 'Enter' && verifyMagicWords()}
-                placeholder={speechSupported ? "or type here..." : "Type here..."}
-                enterKeyHint="done"
-                className="w-full bg-transparent border-b-2 border-[var(--accent-coral)]/30 focus:border-[var(--accent-coral)] px-4 py-3 text-center text-[var(--text-primary)] text-lg placeholder-[var(--text-muted)]/50 outline-none transition-colors"
-              />
+              {/* Words display - masked by default */}
+              {magicWords && (
+                <div className="relative mb-4">
+                  <div className="text-center text-[var(--text-primary)] text-lg py-2">
+                    {showWords ? magicWords : '• • •'}
+                  </div>
+                  <button
+                    onClick={() => setShowWords(!showWords)}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors p-2"
+                    type="button"
+                  >
+                    {showWords ? '🙈' : '👁️'}
+                  </button>
+                </div>
+              )}
+
+              {/* Text input as fallback - hidden when words are captured */}
+              {!magicWords && (
+                <input
+                  type="text"
+                  value={magicWords}
+                  onChange={(e) => { setMagicWords(e.target.value); setAuthError(''); }}
+                  onKeyDown={(e) => e.key === 'Enter' && verifyMagicWords()}
+                  placeholder={speechSupported ? "or type here..." : "Type here..."}
+                  enterKeyHint="done"
+                  className="w-full bg-transparent border-b-2 border-[var(--accent-coral)]/30 focus:border-[var(--accent-coral)] px-4 py-3 text-center text-[var(--text-primary)] text-lg placeholder-[var(--text-muted)]/50 outline-none transition-colors"
+                />
+              )}
+
+              {/* Clear button when words are captured */}
+              {magicWords && (
+                <button
+                  onClick={() => { setMagicWords(''); setShowWords(false); }}
+                  className="text-[var(--text-muted)] text-xs hover:text-[var(--text-secondary)] transition-colors"
+                >
+                  Clear and try again
+                </button>
+              )}
 
               {authError && (
                 <p className="text-[var(--accent-coral)] text-sm mt-4 italic animate-pulse">
@@ -491,18 +385,6 @@ export default function DadPage() {
                 Start over
               </button>
             </div>
-          )}
-
-          {/* Passkey option - subtle at bottom */}
-          {webAuthnSupported && isRegistered && authStep === 'words' && (
-            <button
-              onClick={authenticateWebAuthn}
-              disabled={isLoading}
-              className="mt-12 text-[var(--text-muted)] text-xs hover:text-[var(--text-secondary)] transition-colors flex items-center gap-2"
-            >
-              <span>🔑</span>
-              {isLoading ? 'Verifying...' : 'Use passkey instead'}
-            </button>
           )}
         </main>
 
