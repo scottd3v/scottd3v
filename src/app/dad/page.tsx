@@ -116,6 +116,8 @@ export default function DadPage() {
   const [selectedDate, setSelectedDate] = useState('');
   const [authStep, setAuthStep] = useState<'words' | 'date'>('words');
   const [showSparkles, setShowSparkles] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
 
   // Kid stats
   const [dannyStats, setDannyStats] = useState<KidStats | null>(null);
@@ -130,6 +132,10 @@ export default function DadPage() {
     setWebAuthnSupported(isWebAuthnSupported());
     const credential = localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
     setIsRegistered(!!credential);
+    // Check for Web Speech API support
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any;
+    setSpeechSupported(!!(win.SpeechRecognition || win.webkitSpeechRecognition));
   }, []);
 
   // Load kid stats and titles when authenticated
@@ -259,6 +265,43 @@ export default function DadPage() {
     }
   };
 
+  // Start listening for speech
+  const startListening = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any;
+    const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setAuthError('');
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setMagicWords(transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      setAuthError('Could not hear you. Try again.');
+      setTimeout(() => setAuthError(''), 2000);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   // Update kid settings
   const updateDannySettings = (settings: Partial<KidStats>) => {
     saveKidSettings('danny', settings);
@@ -363,15 +406,36 @@ export default function DadPage() {
                 Whisper your words to the Seuss...
               </p>
 
+              {/* Microphone button - the main interaction */}
+              {speechSupported && (
+                <button
+                  onClick={startListening}
+                  disabled={isListening}
+                  className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 transition-all ${
+                    isListening
+                      ? 'bg-[var(--accent-coral)] scale-110 animate-pulse'
+                      : 'bg-[var(--accent-coral)]/20 hover:bg-[var(--accent-coral)]/30 active:scale-95'
+                  } border-2 border-[var(--accent-coral)]/50`}
+                >
+                  <span className="text-3xl">{isListening ? '👂' : '🎤'}</span>
+                </button>
+              )}
+
+              {isListening && (
+                <p className="text-[var(--accent-coral)] text-sm mb-4 animate-pulse">
+                  Listening...
+                </p>
+              )}
+
+              {/* Text input as fallback / display */}
               <input
                 type="text"
                 value={magicWords}
                 onChange={(e) => { setMagicWords(e.target.value); setAuthError(''); }}
                 onKeyDown={(e) => e.key === 'Enter' && verifyMagicWords()}
-                placeholder="..."
+                placeholder={speechSupported ? "or type here..." : "Type here..."}
                 enterKeyHint="done"
-                className="w-full bg-transparent border-b-2 border-[var(--accent-coral)]/30 focus:border-[var(--accent-coral)] px-4 py-3 text-center text-[var(--text-primary)] text-lg placeholder-[var(--text-muted)]/30 outline-none transition-colors"
-                autoFocus
+                className="w-full bg-transparent border-b-2 border-[var(--accent-coral)]/30 focus:border-[var(--accent-coral)] px-4 py-3 text-center text-[var(--text-primary)] text-lg placeholder-[var(--text-muted)]/50 outline-none transition-colors"
               />
 
               {authError && (
@@ -385,7 +449,7 @@ export default function DadPage() {
                 disabled={!magicWords.trim()}
                 className="mt-8 px-8 py-3 rounded-full bg-[var(--accent-coral)]/10 border border-[var(--accent-coral)]/30 text-[var(--accent-coral)] hover:bg-[var(--accent-coral)]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
-                Speak
+                Enter
               </button>
             </div>
           ) : (
