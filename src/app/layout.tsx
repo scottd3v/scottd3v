@@ -13,8 +13,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://scottd3v.com"),
   title: "scottd3v - Apps & Projects",
   description: "Personal developer site by Scott Reed. iOS apps, games, and projects.",
+  openGraph: {
+    title: "Apps & Projects",
+    description: "scottd3v.com",
+    siteName: "scottd3v",
+    images: [
+      {
+        url: "/og-scottd3v.png",
+        width: 1200,
+        height: 630,
+        alt: "scottd3v - Apps & Projects",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Apps & Projects",
+    description: "scottd3v.com",
+    images: ["/og-scottd3v.png"],
+  },
 };
 
 export default function RootLayout({
