@@ -2,14 +2,133 @@
 
 import Image from "next/image";
 import { GlassCard } from "@/components";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SplitFlapTitle from "@/components/SplitFlapTitle";
+
+// Typewriter component for poem lines
+function TypewriterLine({
+  text,
+  delay = 0,
+  speed = 30,
+  className = "",
+  onComplete
+}: {
+  text: string;
+  delay?: number;
+  speed?: number;
+  className?: string;
+  onComplete?: () => void;
+}) {
+  const [displayedText, setDisplayedText] = useState("");
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const startTimer = setTimeout(() => setStarted(true), delay);
+    return () => clearTimeout(startTimer);
+  }, [delay]);
+
+  useEffect(() => {
+    if (!started) return;
+
+    if (displayedText.length < text.length) {
+      const timer = setTimeout(() => {
+        setDisplayedText(text.slice(0, displayedText.length + 1));
+      }, speed);
+      return () => clearTimeout(timer);
+    } else if (onComplete) {
+      onComplete();
+    }
+  }, [started, displayedText, text, speed, onComplete]);
+
+  return (
+    <p className={className} style={{ minHeight: '1.6em' }}>
+      {displayedText}
+      {started && displayedText.length < text.length && (
+        <span className="typewriter-cursor">|</span>
+      )}
+    </p>
+  );
+}
 
 export default function Home() {
   const router = useRouter();
   const [clickCount, setClickCount] = useState(0);
+  const [showPoem, setShowPoem] = useState(false);
+  const [poemAnimating, setPoemAnimating] = useState(false);
+  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; color: string }>>([]);
+  const [swipeY, setSwipeY] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const [poemComplete, setPoemComplete] = useState(false);
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartY = useRef(0);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Lock body scroll when poem is shown
+  useEffect(() => {
+    if (showPoem) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showPoem]);
+
+  // Create particle burst
+  const createParticleBurst = useCallback(() => {
+    const colors = ['var(--accent-coral)', 'var(--accent-teal)', '#f5f3e7'];
+    const newParticles = Array.from({ length: 20 }, (_, i) => ({
+      id: Date.now() + i,
+      x: 50 + (Math.random() - 0.5) * 30,
+      y: 50 + (Math.random() - 0.5) * 30,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    }));
+    setParticles(newParticles);
+    setTimeout(() => setParticles([]), 1500);
+  }, []);
+
+  const handlePoemOpen = () => {
+    setShowPoem(true);
+    setPoemAnimating(true);
+    setPoemComplete(false);
+    createParticleBurst();
+  };
+
+  const handlePoemComplete = useCallback(() => {
+    setPoemComplete(true);
+  }, []);
+
+  const handlePoemClose = useCallback(() => {
+    setPoemAnimating(false);
+    setSwipeY(0);
+    setIsSwiping(false);
+    setTimeout(() => setShowPoem(false), 300);
+  }, []);
+
+  // Swipe handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    setIsSwiping(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isSwiping) return;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    if (deltaY > 0) {
+      setSwipeY(deltaY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeY > 100) {
+      handlePoemClose();
+    } else {
+      setSwipeY(0);
+    }
+    setIsSwiping(false);
+  };
 
   const handleNameClick = () => {
     const newCount = clickCount + 1;
@@ -168,12 +287,40 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="py-8 text-center relative z-10 animate-fade-in delay-800">
+        {/* Quote */}
         <p
-          className="text-lg italic mb-3"
+          className="text-lg italic mb-6"
           style={{ color: 'var(--accent-teal)' }}
         >
           Oh the places we&apos;re going
         </p>
+
+        {/* Software Seuss signature - Easter egg! */}
+        <button
+          onClick={handlePoemOpen}
+          className="software-seuss-wrapper cursor-pointer bg-transparent border-none mb-6"
+          aria-label="Reveal poem"
+          type="button"
+        >
+          <div className="sparkles">
+            <div className="sparkle" />
+            <div className="sparkle" />
+            <div className="sparkle" />
+            <div className="sparkle" />
+            <div className="sparkle" />
+            <div className="sparkle" />
+            <div className="sparkle" />
+          </div>
+          <Image
+            src="/softwareseus.svg"
+            alt="Software Seuss"
+            width={120}
+            height={92}
+            className="software-seuss mx-auto"
+          />
+        </button>
+
+        {/* Copyright */}
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
           © 2025{' '}
           <span
@@ -184,6 +331,116 @@ export default function Home() {
           </span>
         </p>
       </footer>
+
+      {/* Poem Easter Egg Modal */}
+      {showPoem && (
+        <div
+          className={`poem-overlay ${poemAnimating ? 'poem-overlay-visible' : ''}`}
+          onClick={handlePoemClose}
+          style={{ opacity: Math.max(0.3, 1 - swipeY / 300) }}
+        >
+          {/* Particle burst on open */}
+          {particles.map((particle) => (
+            <div
+              key={particle.id}
+              className="burst-particle"
+              style={{
+                left: `${particle.x}%`,
+                top: `${particle.y}%`,
+                backgroundColor: particle.color,
+              }}
+            />
+          ))}
+
+          <div
+            ref={modalRef}
+            className={`poem-container ${poemAnimating ? 'poem-container-visible' : ''} ${poemComplete ? 'poem-complete' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{
+              transform: `translateY(${swipeY}px) scale(${1 - swipeY / 1000})`,
+              transition: isSwiping ? 'none' : undefined
+            }}
+          >
+            {/* Swipe indicator */}
+            <div className="swipe-indicator" />
+
+            {/* Close button */}
+            <button
+              onClick={handlePoemClose}
+              className="poem-close"
+              aria-label="Close poem"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Poem content with typewriter effect */}
+            <div className="poem-content">
+              <div className="poem-stanza poem-stanza-1">
+                <TypewriterLine
+                  text="A five and a four and a baby makes three."
+                  delay={300}
+                  speed={25}
+                  className="poem-line"
+                />
+                <TypewriterLine
+                  text="They climb and they pull and they hang onto me."
+                  delay={1800}
+                  speed={25}
+                  className="poem-line"
+                />
+                <TypewriterLine
+                  text="So I hang every day, decompress head to toe,"
+                  delay={3400}
+                  speed={25}
+                  className="poem-line"
+                />
+                <TypewriterLine
+                  text="So I'm ready to play wherever they go."
+                  delay={4900}
+                  speed={25}
+                  className="poem-line"
+                />
+              </div>
+
+              <div className="poem-stanza poem-stanza-2">
+                <TypewriterLine
+                  text="A bar, a branch, a doorframe will do."
+                  delay={6500}
+                  speed={25}
+                  className="poem-line"
+                />
+                <TypewriterLine
+                  text="A playground, a beam, there's always a view."
+                  delay={7800}
+                  speed={25}
+                  className="poem-line"
+                />
+                <TypewriterLine
+                  text="You can hang in the morning, you can hang in the night."
+                  delay={9300}
+                  speed={25}
+                  className="poem-line"
+                />
+                <TypewriterLine
+                  text="You can hang for a minute and you'll feel just right."
+                  delay={11200}
+                  speed={25}
+                  className="poem-line"
+                  onComplete={handlePoemComplete}
+                />
+              </div>
+            </div>
+
+            {/* Swipe to close hint */}
+            <p className="poem-hint">swipe down or tap outside to close</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
