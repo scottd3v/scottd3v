@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { saveTitles, getStoredTitles, getDefaultTitles } from '@/components/SplitFlapTitle';
 
 // Types
@@ -20,10 +20,12 @@ interface EasterEgg {
   howTo: string;
 }
 
-// The magic words (case-insensitive)
-const MAGIC_PHRASE = 'hop on pop';
-// The special date - when Danny first read the book
-const MAGIC_DATE = '2025-12-05';
+// The magic words - must be clicked in this order
+const MAGIC_WORDS = ['Hop', 'On', 'Pop'];
+// Decoy words to mix in
+const DECOY_WORDS = ['Cat', 'Hat', 'Fish', 'Wish', 'Thing', 'One', 'Two', 'Red', 'Blue'];
+// The magic PIN - December 5, 2025 (12/05/25)
+const MAGIC_PIN = '120525';
 
 // Load kid stats from localStorage
 const loadKidStats = (kid: 'danny' | 'hank'): KidStats | null => {
@@ -72,15 +74,11 @@ export default function DadPage() {
   const [authError, setAuthError] = useState('');
 
   // Seussian auth state
-  const [magicWords, setMagicWords] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
-  const [authStep, setAuthStep] = useState<'words' | 'date'>('words');
+  const [selectedWords, setSelectedWords] = useState<string[]>([]);
+  const [pin, setPin] = useState('');
+  const [authStep, setAuthStep] = useState<'words' | 'pin'>('words');
   const [showSparkles, setShowSparkles] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(false);
-  const [showWords, setShowWords] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null);
+  const [shuffledWords, setShuffledWords] = useState<string[]>([]);
 
   // Kid stats
   const [dannyStats, setDannyStats] = useState<KidStats | null>(null);
@@ -90,11 +88,12 @@ export default function DadPage() {
   const [titles, setTitles] = useState<string[]>([]);
   const [newTitle, setNewTitle] = useState('');
 
-  // Check for Web Speech API support on mount
+  // Shuffle words on mount
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const win = window as any;
-    setSpeechSupported(!!(win.SpeechRecognition || win.webkitSpeechRecognition));
+    // Combine magic words with some decoys and shuffle
+    const allWords = [...MAGIC_WORDS, ...DECOY_WORDS.slice(0, 6)];
+    const shuffled = allWords.sort(() => Math.random() - 0.5);
+    setShuffledWords(shuffled);
   }, []);
 
   // Load kid stats and titles when authenticated
@@ -106,81 +105,60 @@ export default function DadPage() {
     }
   }, [isAuthenticated]);
 
-  // Verify the magic words
-  const verifyMagicWords = () => {
-    if (magicWords.toLowerCase().trim() === MAGIC_PHRASE) {
-      setShowSparkles(true);
-      setTimeout(() => {
-        setShowSparkles(false);
-        setAuthStep('date');
-      }, 800);
-    } else {
-      setAuthError('The Seuss does not recognize these words...');
-      setTimeout(() => setAuthError(''), 2000);
+  // Handle word click
+  const handleWordClick = (word: string) => {
+    const newSelected = [...selectedWords, word];
+    setSelectedWords(newSelected);
+    setAuthError('');
+
+    // Check if they've selected 3 words
+    if (newSelected.length === 3) {
+      // Check if correct sequence
+      if (newSelected.join(' ') === MAGIC_WORDS.join(' ')) {
+        setShowSparkles(true);
+        setTimeout(() => {
+          setShowSparkles(false);
+          setAuthStep('pin');
+        }, 800);
+      } else {
+        setAuthError('Not quite right...');
+        setTimeout(() => {
+          setSelectedWords([]);
+          setAuthError('');
+        }, 1000);
+      }
     }
   };
 
-  // Verify the magic date
-  const verifyMagicDate = () => {
-    if (selectedDate === MAGIC_DATE) {
-      setShowSparkles(true);
-      setTimeout(() => {
-        setIsAuthenticated(true);
-      }, 600);
-    } else {
-      setAuthError('This is not the day...');
-      setTimeout(() => setAuthError(''), 2000);
+  // Handle PIN input
+  const handlePinPress = (num: number) => {
+    if (pin.length >= 6) return;
+
+    const newPin = pin + num.toString();
+    setPin(newPin);
+    setAuthError('');
+
+    // Check when 6 digits entered
+    if (newPin.length === 6) {
+      if (newPin === MAGIC_PIN) {
+        setShowSparkles(true);
+        setTimeout(() => {
+          setIsAuthenticated(true);
+        }, 600);
+      } else {
+        setAuthError('Try again...');
+        setTimeout(() => {
+          setPin('');
+          setAuthError('');
+        }, 1000);
+      }
     }
   };
 
-  // Start listening for speech
-  const startListening = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const win = window as any;
-    const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => {
-      setIsListening(true);
-      setAuthError('');
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setMagicWords(transcript);
-      setIsListening(false);
-      recognitionRef.current = null;
-    };
-
-    recognition.onerror = () => {
-      setIsListening(false);
-      recognitionRef.current = null;
-      setAuthError('Could not hear you. Try again.');
-      setTimeout(() => setAuthError(''), 2000);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-      recognitionRef.current = null;
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-  };
-
-  // Stop listening for speech
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
-    setIsListening(false);
+  // Clear PIN
+  const handlePinClear = () => {
+    setPin('');
+    setAuthError('');
   };
 
   // Update kid settings
@@ -281,168 +259,136 @@ export default function DadPage() {
           </div>
 
           {authStep === 'words' ? (
-            // Step 1: The Magic Words
+            // Step 1: Click the Magic Words in Order
             <div className="text-center animate-fade-in w-full">
+              <p className="text-[var(--accent-teal)] text-sm italic mb-2">
+                Find the magic words...
+              </p>
+              <p className="text-[var(--text-secondary)] text-sm mb-8">
+                Tap them in the right order
+              </p>
 
-              {/* STATE: No words captured yet */}
-              {!magicWords && !isListening && (
-                <>
-                  <p className="text-[var(--accent-teal)] text-sm italic mb-8">
-                    Whisper your words to the Seuss...
-                  </p>
-
-                  {/* Big mic button - idle state */}
-                  {speechSupported && (
-                    <button
-                      onClick={startListening}
-                      className="relative w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 bg-[var(--accent-coral)]/20 hover:bg-[var(--accent-coral)]/30 active:scale-95 border-2 border-[var(--accent-coral)]/50 transition-all group"
-                    >
-                      <span className="text-4xl group-hover:scale-110 transition-transform">🎤</span>
-                    </button>
-                  )}
-                  <p className="text-[var(--text-muted)] text-sm mb-6">
-                    {speechSupported ? 'Tap to speak' : 'Type your phrase below'}
-                  </p>
-
-                  {/* Text input fallback */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={magicWords}
-                      onChange={(e) => { setMagicWords(e.target.value); setAuthError(''); }}
-                      onKeyDown={(e) => e.key === 'Enter' && verifyMagicWords()}
-                      placeholder={speechSupported ? "or type here..." : "Type your phrase..."}
-                      enterKeyHint="done"
-                      className="w-full bg-transparent border-b-2 border-[var(--accent-coral)]/30 focus:border-[var(--accent-coral)] px-4 py-3 text-center text-[var(--text-primary)] text-lg placeholder-[var(--text-muted)]/50 outline-none transition-colors"
-                    />
+              {/* Selected words display */}
+              <div className="flex justify-center gap-2 mb-6 min-h-[3rem]">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className={`w-16 h-10 rounded-lg border-2 flex items-center justify-center transition-all ${
+                      selectedWords[i]
+                        ? 'bg-[var(--accent-coral)]/20 border-[var(--accent-coral)] text-[var(--text-primary)]'
+                        : 'bg-transparent border-[var(--accent-coral)]/30 border-dashed'
+                    }`}
+                  >
+                    {selectedWords[i] && (
+                      <span className="text-sm font-medium">{selectedWords[i]}</span>
+                    )}
                   </div>
-                </>
-              )}
+                ))}
+              </div>
 
-              {/* STATE: Listening */}
-              {isListening && (
-                <>
-                  <p className="text-[var(--accent-coral)] text-sm italic mb-6 animate-pulse">
-                    I&apos;m listening...
-                  </p>
-
-                  {/* Animated listening button with rings */}
-                  <div className="relative w-32 h-32 mx-auto mb-4">
-                    {/* Pulsing rings */}
-                    <div className="absolute inset-0 rounded-full border-2 border-[var(--accent-coral)]/30 animate-ping" />
-                    <div className="absolute inset-2 rounded-full border-2 border-[var(--accent-coral)]/40 animate-ping" style={{ animationDelay: '0.2s' }} />
-                    <div className="absolute inset-4 rounded-full border-2 border-[var(--accent-coral)]/50 animate-ping" style={{ animationDelay: '0.4s' }} />
-
-                    {/* Center button - tap to stop */}
+              {/* Word cloud */}
+              <div className="flex flex-wrap justify-center gap-3 mb-6">
+                {shuffledWords.map((word) => {
+                  const isSelected = selectedWords.includes(word);
+                  return (
                     <button
-                      onClick={stopListening}
-                      className="absolute inset-6 rounded-full bg-[var(--accent-coral)] flex items-center justify-center shadow-lg shadow-[var(--accent-coral)]/30 active:scale-95 transition-transform"
+                      key={word}
+                      onClick={() => !isSelected && handleWordClick(word)}
+                      disabled={isSelected || selectedWords.length >= 3}
+                      className={`px-5 py-2.5 rounded-full text-base font-medium transition-all ${
+                        isSelected
+                          ? 'bg-[var(--accent-coral)]/10 text-[var(--accent-coral)]/40 cursor-not-allowed'
+                          : 'bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--accent-coral)]/20 hover:border-[var(--accent-coral)]/50 active:scale-95'
+                      }`}
                     >
-                      <span className="text-3xl">👂</span>
+                      {word}
                     </button>
-                  </div>
-
-                  <p className="text-[var(--text-muted)] text-sm">
-                    Tap to stop
-                  </p>
-                </>
-              )}
-
-              {/* STATE: Words captured */}
-              {magicWords && !isListening && (
-                <>
-                  <p className="text-[var(--accent-teal)] text-sm italic mb-6">
-                    Words captured!
-                  </p>
-
-                  {/* Word bubbles display */}
-                  <div className="flex flex-wrap justify-center gap-2 mb-4 min-h-[3rem]">
-                    {magicWords.split(' ').filter(w => w).map((word, i) => (
-                      <div
-                        key={i}
-                        className="px-4 py-2 rounded-full bg-[var(--accent-coral)]/20 border border-[var(--accent-coral)]/30 text-[var(--text-primary)]"
-                      >
-                        {showWords ? word : '•••'}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Word count */}
-                  <p className="text-[var(--text-muted)] text-xs mb-4">
-                    {magicWords.split(' ').filter(w => w).length} word{magicWords.split(' ').filter(w => w).length !== 1 ? 's' : ''} captured
-                  </p>
-
-                  {/* Action buttons */}
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <button
-                      onClick={() => setShowWords(!showWords)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm"
-                    >
-                      {showWords ? '🙈 Hide' : '👁️ Reveal'}
-                    </button>
-                    <button
-                      onClick={() => { setMagicWords(''); setShowWords(false); }}
-                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-sm"
-                    >
-                      🔄 Clear
-                    </button>
-                  </div>
-                </>
-              )}
+                  );
+                })}
+              </div>
 
               {authError && (
-                <p className="text-[var(--accent-coral)] text-sm mt-4 italic animate-pulse">
+                <p className="text-[var(--accent-coral)] text-sm italic animate-pulse mb-4">
                   {authError}
                 </p>
               )}
 
-              {/* Submit button - only show when words captured */}
-              {magicWords && !isListening && (
+              {/* Clear button */}
+              {selectedWords.length > 0 && (
                 <button
-                  onClick={verifyMagicWords}
-                  className="mt-4 px-8 py-3 rounded-full bg-[var(--accent-coral)]/20 border border-[var(--accent-coral)]/50 text-[var(--accent-coral)] hover:bg-[var(--accent-coral)]/30 transition-all font-medium"
+                  onClick={() => setSelectedWords([])}
+                  className="text-[var(--text-muted)] text-xs hover:text-[var(--text-secondary)] transition-colors"
                 >
-                  Cast the spell ✨
+                  Clear selection
                 </button>
               )}
             </div>
           ) : (
-            // Step 2: The Magic Date
+            // Step 2: Enter the PIN
             <div className="text-center animate-fade-in w-full">
               <p className="text-[var(--accent-teal)] text-sm italic mb-2">
                 The words are true...
               </p>
-              <p className="text-[var(--accent-coral)] text-sm italic mb-6">
-                Now choose the day it all began.
+              <p className="text-[var(--text-secondary)] text-sm mb-6">
+                Now remember the day
               </p>
 
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => { setSelectedDate(e.target.value); setAuthError(''); }}
-                className="w-full bg-[var(--background-elevated)] border border-[var(--border)] rounded-lg px-4 py-3 text-center text-[var(--text-primary)] outline-none focus:border-[var(--accent-teal)] transition-colors cursor-pointer"
-                style={{ colorScheme: 'dark' }}
-              />
+              {/* PIN dots display */}
+              <div className={`flex justify-center gap-2 mb-8 ${authError ? 'animate-shake' : ''}`}>
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className={`w-4 h-4 rounded-full transition-all ${
+                      pin.length > i
+                        ? 'bg-[var(--accent-teal)]'
+                        : 'bg-[var(--accent-teal)]/20 border border-[var(--accent-teal)]/40'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Number pad */}
+              <div className="grid grid-cols-3 gap-3 max-w-[240px] mx-auto mb-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => handlePinPress(num)}
+                    className="w-16 h-16 rounded-xl bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--text-primary)] text-xl font-medium hover:bg-[var(--accent-teal)]/10 hover:border-[var(--accent-teal)]/30 active:scale-95 transition-all"
+                  >
+                    {num}
+                  </button>
+                ))}
+                <div /> {/* Empty space */}
+                <button
+                  onClick={() => handlePinPress(0)}
+                  className="w-16 h-16 rounded-xl bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--text-primary)] text-xl font-medium hover:bg-[var(--accent-teal)]/10 hover:border-[var(--accent-teal)]/30 active:scale-95 transition-all"
+                >
+                  0
+                </button>
+                <button
+                  onClick={handlePinClear}
+                  className="w-16 h-16 rounded-xl bg-[var(--background-elevated)] border border-[var(--border)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--accent-coral)]/10 hover:border-[var(--accent-coral)]/30 active:scale-95 transition-all"
+                >
+                  Clear
+                </button>
+              </div>
 
               {authError && (
-                <p className="text-[var(--accent-coral)] text-sm mt-4 italic animate-pulse">
+                <p className="text-[var(--accent-coral)] text-sm italic animate-pulse mb-4">
                   {authError}
                 </p>
               )}
 
-              <button
-                onClick={verifyMagicDate}
-                disabled={!selectedDate}
-                className="mt-8 px-8 py-3 rounded-full bg-[var(--accent-teal)]/10 border border-[var(--accent-teal)]/30 text-[var(--accent-teal)] hover:bg-[var(--accent-teal)]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                Remember
-              </button>
+              {/* Hint */}
+              <p className="text-[var(--text-muted)] text-xs italic mb-4">
+                MM/DD/YY
+              </p>
 
               <button
-                onClick={() => { setAuthStep('words'); setMagicWords(''); }}
-                className="block mx-auto mt-4 text-[var(--text-muted)] text-xs hover:text-[var(--text-secondary)] transition-colors"
+                onClick={() => { setAuthStep('words'); setSelectedWords([]); setPin(''); }}
+                className="text-[var(--text-muted)] text-xs hover:text-[var(--text-secondary)] transition-colors"
               >
-                Start over
+                ← Start over
               </button>
             </div>
           )}
