@@ -48,7 +48,7 @@ Parent control center with WebAuthn (Touch ID) authentication.
 
 ### Kid Portals (`/danny`, `/hank`)
 Age-protected portals for each kid.
-- **Password:** Their current age (Danny: 6, Hank: 4)
+- **Password:** Their current age (Danny: 5, Hank: 4)
 - Passwords update automatically on birthdays
 - Session persists in sessionStorage until tab closes
 - Mobile: Full-screen touch-friendly interface with number pad
@@ -74,7 +74,7 @@ Chrome Dino-style jumping game with per-player settings.
 **Default Settings:**
 | Player | Difficulty | Daily Limit | Birthday         |
 |--------|------------|-------------|------------------|
-| Danny  | Medium     | 10          | Jan 15, 2019     |
+| Danny  | Medium     | 10          | Jan 15, 2020     |
 | Hank   | Easy       | 10          | Nov 30, 2020     |
 
 **Difficulty Settings:**

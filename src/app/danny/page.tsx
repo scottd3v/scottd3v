@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Danny's birthday - January 15, 2019
-const DANNY_BIRTHDAY = new Date('2019-01-15');
+// Danny's birthday - January 15, 2020
+const DANNY_BIRTHDAY = new Date('2020-01-15');
 
 const calculateAge = (birthday: Date): number => {
   const today = new Date();
