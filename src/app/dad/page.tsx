@@ -56,15 +56,11 @@ const base64ToBuffer = (base64: string): ArrayBuffer => {
 
 // Storage keys
 const WEBAUTHN_CREDENTIAL_KEY = 'dad-webauthn-credential';
-const PASSPHRASE_HASH_KEY = 'dad-passphrase-hash';
 
-// Hash passphrase using Web Crypto
-const hashPassphrase = async (passphrase: string): Promise<string> => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(passphrase);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return bufferToBase64(hashBuffer);
-};
+// The magic words (case-insensitive)
+const MAGIC_PHRASE = 'hop on pop';
+// The special date - when Danny first read the book
+const MAGIC_DATE = '2025-12-05';
 
 // Load kid stats from localStorage
 const loadKidStats = (kid: 'danny' | 'hank'): KidStats | null => {
@@ -112,13 +108,14 @@ export default function DadPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const [webAuthnSupported, setWebAuthnSupported] = useState(false);
-  const [hasPassphrase, setHasPassphrase] = useState(false);
-  const [showPassphraseSetup, setShowPassphraseSetup] = useState(false);
-  const [passphrase, setPassphrase] = useState('');
-  const [confirmPassphrase, setConfirmPassphrase] = useState('');
-  const [passphraseError, setPassphraseError] = useState('');
   const [authError, setAuthError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Seussian auth state
+  const [magicWords, setMagicWords] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [authStep, setAuthStep] = useState<'words' | 'date'>('words');
+  const [showSparkles, setShowSparkles] = useState(false);
 
   // Kid stats
   const [dannyStats, setDannyStats] = useState<KidStats | null>(null);
@@ -132,9 +129,7 @@ export default function DadPage() {
   useEffect(() => {
     setWebAuthnSupported(isWebAuthnSupported());
     const credential = localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
-    const passphraseHash = localStorage.getItem(PASSPHRASE_HASH_KEY);
     setIsRegistered(!!credential);
-    setHasPassphrase(!!passphraseHash);
   }, []);
 
   // Load kid stats and titles when authenticated
@@ -237,40 +232,30 @@ export default function DadPage() {
     }
   }, []);
 
-  // Set up passphrase
-  const setupPassphrase = async () => {
-    if (passphrase.length < 6) {
-      setPassphraseError('Passphrase must be at least 6 characters');
-      return;
+  // Verify the magic words
+  const verifyMagicWords = () => {
+    if (magicWords.toLowerCase().trim() === MAGIC_PHRASE) {
+      setShowSparkles(true);
+      setTimeout(() => {
+        setShowSparkles(false);
+        setAuthStep('date');
+      }, 800);
+    } else {
+      setAuthError('The Seuss does not recognize these words...');
+      setTimeout(() => setAuthError(''), 2000);
     }
-    if (passphrase !== confirmPassphrase) {
-      setPassphraseError('Passphrases do not match');
-      return;
-    }
-
-    const hash = await hashPassphrase(passphrase);
-    localStorage.setItem(PASSPHRASE_HASH_KEY, hash);
-    setHasPassphrase(true);
-    setShowPassphraseSetup(false);
-    setIsAuthenticated(true);
-    setPassphrase('');
-    setConfirmPassphrase('');
   };
 
-  // Authenticate with passphrase
-  const authenticatePassphrase = async () => {
-    const storedHash = localStorage.getItem(PASSPHRASE_HASH_KEY);
-    if (!storedHash) {
-      setPassphraseError('No passphrase set up');
-      return;
-    }
-
-    const hash = await hashPassphrase(passphrase);
-    if (hash === storedHash) {
-      setIsAuthenticated(true);
-      setPassphrase('');
+  // Verify the magic date
+  const verifyMagicDate = () => {
+    if (selectedDate === MAGIC_DATE) {
+      setShowSparkles(true);
+      setTimeout(() => {
+        setIsAuthenticated(true);
+      }, 600);
     } else {
-      setPassphraseError('Incorrect passphrase');
+      setAuthError('This is not the day...');
+      setTimeout(() => setAuthError(''), 2000);
     }
   };
 
@@ -324,134 +309,146 @@ export default function DadPage() {
     saveTitles(defaults);
   };
 
-  // Not authenticated - show login/setup screen
+  // Not authenticated - show the magical Seussian login
   if (!isAuthenticated) {
-    const needsSetup = !isRegistered && !hasPassphrase;
-
     return (
-      <div className="bg-gradient-rich noise-overlay min-h-screen">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
+      <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden">
+        {/* Subtle floating sparkles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-[var(--accent-coral)] rounded-full opacity-30 animate-pulse"
+              style={{
+                left: `${15 + i * 15}%`,
+                top: `${20 + (i % 3) * 25}%`,
+                animationDelay: `${i * 0.5}s`,
+              }}
+            />
+          ))}
+        </div>
 
-        <main className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-8">
-          <div className="text-center mb-8 animate-fade-in">
-            <h1 className="text-4xl font-bold text-gradient mb-2">Dad Portal</h1>
-            <p className="text-[var(--text-secondary)]">
-              {needsSetup ? 'Set up your authentication' : 'Verify your identity'}
-            </p>
+        {/* Success sparkles burst */}
+        {showSparkles && (
+          <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-2 h-2 rounded-full animate-ping"
+                style={{
+                  backgroundColor: i % 2 === 0 ? 'var(--accent-coral)' : 'var(--accent-teal)',
+                  left: `calc(50% + ${Math.cos(i * 30 * Math.PI / 180) * 80}px)`,
+                  top: `calc(50% + ${Math.sin(i * 30 * Math.PI / 180) * 80}px)`,
+                  animationDuration: '0.6s',
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        <main className="relative z-10 flex flex-col items-center max-w-sm w-full">
+          {/* Software Seuss signature as the mystical icon */}
+          <div className={`mb-8 transition-transform duration-500 ${showSparkles ? 'scale-110' : ''}`}>
+            <img
+              src="/softwareseus.svg"
+              alt="Software Seuss"
+              className="w-24 h-auto opacity-60 hover:opacity-80 transition-opacity"
+            />
           </div>
 
-          <div className="glass p-8 max-w-md w-full animate-fade-in delay-200">
-            {authError && (
-              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm text-center">
-                {authError}
-              </div>
-            )}
+          {authStep === 'words' ? (
+            // Step 1: The Magic Words
+            <div className="text-center animate-fade-in w-full">
+              <p className="text-[var(--accent-teal)] text-sm italic mb-6">
+                Whisper your words to the Seuss...
+              </p>
 
-            {needsSetup ? (
-              // First time setup
-              <>
-                {webAuthnSupported && (
-                  <button
-                    onClick={registerWebAuthn}
-                    disabled={isLoading}
-                    className="w-full py-4 px-6 rounded-lg bg-[var(--accent-blue)] text-white font-medium hover:opacity-90 transition-all disabled:opacity-50 mb-4 flex items-center justify-center gap-3"
-                  >
-                    <span className="text-2xl">🔑</span>
-                    {isLoading ? 'Setting up...' : 'Set Up Passkey'}
-                  </button>
-                )}
-                {webAuthnSupported && (
-                  <p className="text-xs text-[var(--text-secondary)] text-center mb-4 -mt-2">
-                    Syncs via iCloud Keychain across all your devices
-                  </p>
-                )}
+              <input
+                type="text"
+                value={magicWords}
+                onChange={(e) => { setMagicWords(e.target.value); setAuthError(''); }}
+                onKeyDown={(e) => e.key === 'Enter' && verifyMagicWords()}
+                placeholder=""
+                autoComplete="off"
+                autoCapitalize="off"
+                className="w-full bg-transparent border-b-2 border-[var(--accent-coral)]/30 focus:border-[var(--accent-coral)] px-4 py-3 text-center text-[var(--text-primary)] text-lg placeholder-transparent outline-none transition-colors"
+                autoFocus
+              />
 
-                <button
-                  onClick={() => setShowPassphraseSetup(true)}
-                  className="w-full py-3 px-6 rounded-lg bg-[var(--glass-bg)] text-[var(--text-secondary)] hover:bg-[var(--glass-hover)] transition-all"
-                >
-                  Use Passphrase Instead
-                </button>
+              {authError && (
+                <p className="text-[var(--accent-coral)] text-sm mt-4 italic animate-pulse">
+                  {authError}
+                </p>
+              )}
 
-                {showPassphraseSetup && (
-                  <div className="mt-6 pt-6 border-t border-[var(--glass-border)]">
-                    <input
-                      type="password"
-                      value={passphrase}
-                      onChange={(e) => { setPassphrase(e.target.value); setPassphraseError(''); }}
-                      placeholder="Enter passphrase"
-                      className="w-full bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-lg px-4 py-3 text-[var(--text-primary)] mb-3"
-                    />
-                    <input
-                      type="password"
-                      value={confirmPassphrase}
-                      onChange={(e) => { setConfirmPassphrase(e.target.value); setPassphraseError(''); }}
-                      placeholder="Confirm passphrase"
-                      className="w-full bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-lg px-4 py-3 text-[var(--text-primary)] mb-3"
-                    />
-                    {passphraseError && (
-                      <p className="text-red-400 text-sm mb-3">{passphraseError}</p>
-                    )}
-                    <button
-                      onClick={setupPassphrase}
-                      className="w-full py-3 px-6 rounded-lg bg-[var(--accent-green)] text-white font-medium hover:opacity-90 transition-all"
-                    >
-                      Save Passphrase
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              // Already set up - authenticate
-              <>
-                {webAuthnSupported && (
-                  <button
-                    onClick={authenticateWebAuthn}
-                    disabled={isLoading}
-                    className="w-full py-4 px-6 rounded-lg bg-[var(--accent-blue)] text-white font-medium hover:opacity-90 transition-all disabled:opacity-50 mb-4 flex items-center justify-center gap-3"
-                  >
-                    <span className="text-2xl">🔑</span>
-                    {isLoading ? 'Verifying...' : 'Use Passkey'}
-                  </button>
-                )}
+              <button
+                onClick={verifyMagicWords}
+                disabled={!magicWords.trim()}
+                className="mt-8 px-8 py-3 rounded-full bg-[var(--accent-coral)]/10 border border-[var(--accent-coral)]/30 text-[var(--accent-coral)] hover:bg-[var(--accent-coral)]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                Speak
+              </button>
+            </div>
+          ) : (
+            // Step 2: The Magic Date
+            <div className="text-center animate-fade-in w-full">
+              <p className="text-[var(--accent-teal)] text-sm italic mb-2">
+                The words are true...
+              </p>
+              <p className="text-[var(--accent-coral)] text-sm italic mb-6">
+                Now choose the day it all began.
+              </p>
 
-                {hasPassphrase && (
-                  <div className={isRegistered ? 'pt-4 border-t border-[var(--glass-border)]' : ''}>
-                    {isRegistered && (
-                      <p className="text-[var(--text-secondary)] text-sm text-center mb-3">Or use passphrase</p>
-                    )}
-                    <input
-                      type="password"
-                      value={passphrase}
-                      onChange={(e) => { setPassphrase(e.target.value); setPassphraseError(''); }}
-                      placeholder="Enter passphrase"
-                      className="w-full bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-lg px-4 py-3 text-[var(--text-primary)] mb-3"
-                      onKeyDown={(e) => e.key === 'Enter' && authenticatePassphrase()}
-                    />
-                    {passphraseError && (
-                      <p className="text-red-400 text-sm mb-3">{passphraseError}</p>
-                    )}
-                    <button
-                      onClick={authenticatePassphrase}
-                      className="w-full py-3 px-6 rounded-lg bg-[var(--accent-green)] text-white font-medium hover:opacity-90 transition-all"
-                    >
-                      Unlock
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => { setSelectedDate(e.target.value); setAuthError(''); }}
+                className="w-full bg-[var(--background-elevated)] border border-[var(--border)] rounded-lg px-4 py-3 text-center text-[var(--text-primary)] outline-none focus:border-[var(--accent-teal)] transition-colors cursor-pointer"
+                style={{ colorScheme: 'dark' }}
+              />
 
-          <a
-            href="/"
-            className="mt-8 text-[var(--text-secondary)] text-sm hover:text-[var(--text-primary)] transition-colors"
-          >
-            ← Back to home
-          </a>
+              {authError && (
+                <p className="text-[var(--accent-coral)] text-sm mt-4 italic animate-pulse">
+                  {authError}
+                </p>
+              )}
+
+              <button
+                onClick={verifyMagicDate}
+                disabled={!selectedDate}
+                className="mt-8 px-8 py-3 rounded-full bg-[var(--accent-teal)]/10 border border-[var(--accent-teal)]/30 text-[var(--accent-teal)] hover:bg-[var(--accent-teal)]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                Remember
+              </button>
+
+              <button
+                onClick={() => { setAuthStep('words'); setMagicWords(''); }}
+                className="block mx-auto mt-4 text-[var(--text-muted)] text-xs hover:text-[var(--text-secondary)] transition-colors"
+              >
+                Start over
+              </button>
+            </div>
+          )}
+
+          {/* Passkey option - subtle at bottom */}
+          {webAuthnSupported && isRegistered && authStep === 'words' && (
+            <button
+              onClick={authenticateWebAuthn}
+              disabled={isLoading}
+              className="mt-12 text-[var(--text-muted)] text-xs hover:text-[var(--text-secondary)] transition-colors flex items-center gap-2"
+            >
+              <span>🔑</span>
+              {isLoading ? 'Verifying...' : 'Use passkey instead'}
+            </button>
+          )}
         </main>
+
+        <a
+          href="/"
+          className="absolute bottom-8 text-[var(--text-muted)] text-sm hover:text-[var(--text-secondary)] transition-colors"
+        >
+          ← Back to home
+        </a>
       </div>
     );
   }
