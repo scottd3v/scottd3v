@@ -368,10 +368,9 @@ export default function DadPage() {
                 value={magicWords}
                 onChange={(e) => { setMagicWords(e.target.value); setAuthError(''); }}
                 onKeyDown={(e) => e.key === 'Enter' && verifyMagicWords()}
-                placeholder=""
-                autoComplete="off"
-                autoCapitalize="off"
-                className="w-full bg-transparent border-b-2 border-[var(--accent-coral)]/30 focus:border-[var(--accent-coral)] px-4 py-3 text-center text-[var(--text-primary)] text-lg placeholder-transparent outline-none transition-colors"
+                placeholder="..."
+                enterKeyHint="done"
+                className="w-full bg-transparent border-b-2 border-[var(--accent-coral)]/30 focus:border-[var(--accent-coral)] px-4 py-3 text-center text-[var(--text-primary)] text-lg placeholder-[var(--text-muted)]/30 outline-none transition-colors"
                 autoFocus
               />
 
