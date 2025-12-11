@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { saveTitles, getStoredTitles, getDefaultTitles } from '@/components/SplitFlapTitle';
 
 // Types
 interface KidStats {
@@ -27,15 +26,15 @@ const DECOY_WORDS = ['Cat', 'Hat', 'Fish', 'Wish', 'Thing', 'One', 'Two', 'Red',
 // The magic PIN - December 5, 2025 (12/05/25)
 const MAGIC_PIN = '120525';
 
-// Load kid stats from localStorage
+// Load kid stats from localStorage - uses same key as DinoGame component
 const loadKidStats = (kid: 'danny' | 'hank'): KidStats | null => {
   if (typeof window === 'undefined') return null;
-  const saved = localStorage.getItem(`dino-${kid}`);
+  const saved = localStorage.getItem(`dino-${kid}-settings`);
   if (!saved) return null;
   return JSON.parse(saved);
 };
 
-// Save kid settings
+// Save kid settings - uses same key as DinoGame component
 const saveKidSettings = (kid: 'danny' | 'hank', settings: Partial<KidStats>) => {
   if (typeof window === 'undefined') return;
   const current = loadKidStats(kid) || {
@@ -47,7 +46,7 @@ const saveKidSettings = (kid: 'danny' | 'hank', settings: Partial<KidStats>) => 
     totalSessions: 0,
     lastPlayDate: '',
   };
-  localStorage.setItem(`dino-${kid}`, JSON.stringify({ ...current, ...settings }));
+  localStorage.setItem(`dino-${kid}-settings`, JSON.stringify({ ...current, ...settings }));
 };
 
 // Easter eggs reference
@@ -84,10 +83,6 @@ export default function DadPage() {
   const [dannyStats, setDannyStats] = useState<KidStats | null>(null);
   const [hankStats, setHankStats] = useState<KidStats | null>(null);
 
-  // Homepage titles
-  const [titles, setTitles] = useState<string[]>([]);
-  const [newTitle, setNewTitle] = useState('');
-
   // Shuffle words on mount
   useEffect(() => {
     // Combine magic words with some decoys and shuffle
@@ -96,12 +91,11 @@ export default function DadPage() {
     setShuffledWords(shuffled);
   }, []);
 
-  // Load kid stats and titles when authenticated
+  // Load kid stats when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       setDannyStats(loadKidStats('danny'));
       setHankStats(loadKidStats('hank'));
-      setTitles(getStoredTitles());
     }
   }, [isAuthenticated]);
 
@@ -176,39 +170,6 @@ export default function DadPage() {
   const resetAttempts = (kid: 'danny' | 'hank') => {
     const setter = kid === 'danny' ? updateDannySettings : updateHankSettings;
     setter({ attemptsToday: 0 });
-  };
-
-  // Title management functions
-  const addTitle = () => {
-    if (newTitle.trim() && !titles.includes(newTitle.trim())) {
-      const updated = [...titles, newTitle.trim()];
-      setTitles(updated);
-      saveTitles(updated);
-      setNewTitle('');
-    }
-  };
-
-  const removeTitle = (index: number) => {
-    if (titles.length > 1) {
-      const updated = titles.filter((_, i) => i !== index);
-      setTitles(updated);
-      saveTitles(updated);
-    }
-  };
-
-  const moveTitle = (index: number, direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= titles.length) return;
-    const updated = [...titles];
-    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
-    setTitles(updated);
-    saveTitles(updated);
-  };
-
-  const resetTitlesToDefault = () => {
-    const defaults = getDefaultTitles();
-    setTitles(defaults);
-    saveTitles(defaults);
   };
 
   // Not authenticated - show the magical Seussian login
@@ -545,75 +506,6 @@ export default function DadPage() {
             ) : (
               <p className="text-[var(--text-secondary)] text-sm">No play data yet</p>
             )}
-          </div>
-        </div>
-
-        {/* Homepage Titles Manager */}
-        <div className="glass p-6 mb-8 animate-fade-in delay-300">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-[var(--text-primary)]">Homepage Titles</h2>
-            <button
-              onClick={resetTitlesToDefault}
-              className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-blue)] transition-colors"
-            >
-              Reset to defaults
-            </button>
-          </div>
-          <p className="text-sm text-[var(--text-secondary)] mb-4">
-            These rotate on the split-flap display under your name
-          </p>
-
-          {/* Add new title */}
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addTitle()}
-              placeholder="Add a new title..."
-              className="flex-1 bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)]"
-            />
-            <button
-              onClick={addTitle}
-              className="px-4 py-2 rounded-lg bg-[var(--accent-green)] text-white text-sm font-medium hover:opacity-90 transition-all"
-            >
-              Add
-            </button>
-          </div>
-
-          {/* Titles list */}
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {titles.map((title, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 bg-[var(--glass-bg)] rounded-lg px-3 py-2 group"
-              >
-                <span className="flex-1 text-sm text-[var(--text-primary)]">{title}</span>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => moveTitle(index, 'up')}
-                    disabled={index === 0}
-                    className="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-30"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    onClick={() => moveTitle(index, 'down')}
-                    disabled={index === titles.length - 1}
-                    className="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-30"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    onClick={() => removeTitle(index)}
-                    disabled={titles.length <= 1}
-                    className="p-1 text-red-400 hover:text-red-300 disabled:opacity-30"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
 
