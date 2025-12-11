@@ -378,133 +378,79 @@ export default function DadPage() {
           <p className="text-[var(--text-secondary)]">Family Platform Control Center</p>
         </div>
 
-        {/* Kid Stats Grid */}
+        {/* Kid Cards - Reset is the main action */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Danny's Stats */}
+          {/* Danny's Card */}
           <div className="glass p-6 animate-fade-in delay-100">
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">🦕</span>
+              <span className="text-4xl">🦕</span>
               <div>
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">Danny</h2>
-                <p className="text-sm text-[var(--text-secondary)]">Age 5 (Jan 15, 2020) • /danny</p>
+                <p className="text-sm text-[var(--text-secondary)]">Age 5</p>
               </div>
             </div>
 
-            {dannyStats ? (
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--text-secondary)]">Plays Today</span>
-                  <span className="text-[var(--text-primary)]">{dannyStats.attemptsToday} / {dannyStats.dailyLimit}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--text-secondary)]">High Score</span>
-                  <span className="text-[var(--accent-gold)]">{dannyStats.highScore}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--text-secondary)]">Streak</span>
-                  <span className="text-orange-400">{dannyStats.streakDays} days</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--text-secondary)]">Difficulty</span>
-                  <span className="text-[var(--text-primary)] capitalize">{dannyStats.difficulty}</span>
-                </div>
-
-                <div className="pt-3 border-t border-[var(--glass-border)] space-y-2">
-                  <div className="flex gap-2">
-                    <label className="text-sm text-[var(--text-secondary)]">Daily Limit:</label>
-                    <input
-                      type="number"
-                      value={dannyStats.dailyLimit}
-                      onChange={(e) => updateDannySettings({ dailyLimit: parseInt(e.target.value) || 0 })}
-                      className="w-16 bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded px-2 py-1 text-sm text-[var(--text-primary)]"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <label className="text-sm text-[var(--text-secondary)]">Difficulty:</label>
-                    <select
-                      value={dannyStats.difficulty}
-                      onChange={(e) => updateDannySettings({ difficulty: e.target.value as 'easy' | 'medium' | 'hard' })}
-                      className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded px-2 py-1 text-sm text-[var(--text-primary)]"
-                    >
-                      <option value="easy">Easy</option>
-                      <option value="medium">Medium</option>
-                      <option value="hard">Hard</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={() => resetAttempts('danny')}
-                    className="text-sm text-[var(--accent-blue)] hover:underline"
-                  >
-                    Reset today&apos;s plays
-                  </button>
-                </div>
+            {/* Big plays counter */}
+            <div className="text-center py-4 mb-4 bg-[var(--glass-bg)] rounded-xl">
+              <div className="text-4xl font-bold text-[var(--text-primary)]">
+                {dannyStats?.attemptsToday || 0} <span className="text-[var(--text-secondary)] text-2xl">/ {dannyStats?.dailyLimit || 10}</span>
               </div>
-            ) : (
-              <p className="text-[var(--text-secondary)] text-sm">No play data yet</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">plays today</p>
+            </div>
+
+            {/* BIG Reset Button */}
+            <button
+              onClick={() => resetAttempts('danny')}
+              className="w-full py-4 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white text-lg font-bold transition-all shadow-lg shadow-emerald-500/25"
+            >
+              Reset Danny&apos;s Plays
+            </button>
+
+            {/* Stats (collapsed) */}
+            {dannyStats && (
+              <div className="mt-4 pt-4 border-t border-[var(--glass-border)] grid grid-cols-2 gap-2 text-sm">
+                <div className="text-[var(--text-secondary)]">High Score</div>
+                <div className="text-right text-[var(--accent-gold)]">{dannyStats.highScore}</div>
+                <div className="text-[var(--text-secondary)]">Difficulty</div>
+                <div className="text-right capitalize">{dannyStats.difficulty}</div>
+              </div>
             )}
           </div>
 
-          {/* Hank's Stats */}
+          {/* Hank's Card */}
           <div className="glass p-6 animate-fade-in delay-200">
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">🦖</span>
+              <span className="text-4xl">🦖</span>
               <div>
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">Hank</h2>
-                <p className="text-sm text-[var(--text-secondary)]">Age 4 (Nov 30, 2020) • /hank</p>
+                <p className="text-sm text-[var(--text-secondary)]">Age 4</p>
               </div>
             </div>
 
-            {hankStats ? (
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--text-secondary)]">Plays Today</span>
-                  <span className="text-[var(--text-primary)]">{hankStats.attemptsToday} / {hankStats.dailyLimit}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--text-secondary)]">High Score</span>
-                  <span className="text-[var(--accent-gold)]">{hankStats.highScore}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--text-secondary)]">Streak</span>
-                  <span className="text-orange-400">{hankStats.streakDays} days</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--text-secondary)]">Difficulty</span>
-                  <span className="text-[var(--text-primary)] capitalize">{hankStats.difficulty}</span>
-                </div>
-
-                <div className="pt-3 border-t border-[var(--glass-border)] space-y-2">
-                  <div className="flex gap-2">
-                    <label className="text-sm text-[var(--text-secondary)]">Daily Limit:</label>
-                    <input
-                      type="number"
-                      value={hankStats.dailyLimit}
-                      onChange={(e) => updateHankSettings({ dailyLimit: parseInt(e.target.value) || 0 })}
-                      className="w-16 bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded px-2 py-1 text-sm text-[var(--text-primary)]"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <label className="text-sm text-[var(--text-secondary)]">Difficulty:</label>
-                    <select
-                      value={hankStats.difficulty}
-                      onChange={(e) => updateHankSettings({ difficulty: e.target.value as 'easy' | 'medium' | 'hard' })}
-                      className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded px-2 py-1 text-sm text-[var(--text-primary)]"
-                    >
-                      <option value="easy">Easy</option>
-                      <option value="medium">Medium</option>
-                      <option value="hard">Hard</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={() => resetAttempts('hank')}
-                    className="text-sm text-[var(--accent-blue)] hover:underline"
-                  >
-                    Reset today&apos;s plays
-                  </button>
-                </div>
+            {/* Big plays counter */}
+            <div className="text-center py-4 mb-4 bg-[var(--glass-bg)] rounded-xl">
+              <div className="text-4xl font-bold text-[var(--text-primary)]">
+                {hankStats?.attemptsToday || 0} <span className="text-[var(--text-secondary)] text-2xl">/ {hankStats?.dailyLimit || 10}</span>
               </div>
-            ) : (
-              <p className="text-[var(--text-secondary)] text-sm">No play data yet</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">plays today</p>
+            </div>
+
+            {/* BIG Reset Button */}
+            <button
+              onClick={() => resetAttempts('hank')}
+              className="w-full py-4 px-6 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-white text-lg font-bold transition-all shadow-lg shadow-amber-500/25"
+            >
+              Reset Hank&apos;s Plays
+            </button>
+
+            {/* Stats (collapsed) */}
+            {hankStats && (
+              <div className="mt-4 pt-4 border-t border-[var(--glass-border)] grid grid-cols-2 gap-2 text-sm">
+                <div className="text-[var(--text-secondary)]">High Score</div>
+                <div className="text-right text-[var(--accent-gold)]">{hankStats.highScore}</div>
+                <div className="text-[var(--text-secondary)]">Difficulty</div>
+                <div className="text-right capitalize">{hankStats.difficulty}</div>
+              </div>
             )}
           </div>
         </div>
