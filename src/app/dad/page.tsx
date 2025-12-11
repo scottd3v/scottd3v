@@ -167,7 +167,7 @@ export default function DadPage() {
             id: window.location.hostname,
           },
           user: {
-            id: new TextEncoder().encode('dad'),
+            id: new TextEncoder().encode('dad-scottd3v'),
             name: 'dad@scottd3v.com',
             displayName: 'Dad',
           },
@@ -176,7 +176,8 @@ export default function DadPage() {
             { alg: -257, type: 'public-key' }, // RS256
           ],
           authenticatorSelection: {
-            authenticatorAttachment: 'platform',
+            // No authenticatorAttachment - allows passkeys to sync via iCloud Keychain
+            residentKey: 'required',        // Makes it a discoverable credential (passkey)
             userVerification: 'required',
           },
           timeout: 60000,
@@ -200,32 +201,32 @@ export default function DadPage() {
 
   // Authenticate with WebAuthn
   const authenticateWebAuthn = useCallback(async () => {
-    const storedCredentialId = localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
-    if (!storedCredentialId) {
-      setAuthError('No credential found. Please set up authentication first.');
-      return;
-    }
-
     setIsLoading(true);
     setAuthError('');
 
     try {
       const challenge = generateChallenge();
+      const storedCredentialId = localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
 
       const assertion = await navigator.credentials.get({
         publicKey: {
           challenge,
           rpId: window.location.hostname,
-          allowCredentials: [{
+          // If we have a stored credential ID, suggest it; otherwise allow any passkey for this site
+          allowCredentials: storedCredentialId ? [{
             id: base64ToBuffer(storedCredentialId),
             type: 'public-key',
-          }],
+          }] : [],
           userVerification: 'required',
           timeout: 60000,
         },
       });
 
       if (assertion) {
+        // Store the credential ID for future use (in case it was a discoverable credential)
+        const credentialId = bufferToBase64((assertion as PublicKeyCredential).rawId);
+        localStorage.setItem(WEBAUTHN_CREDENTIAL_KEY, credentialId);
+        setIsRegistered(true);
         setIsAuthenticated(true);
       }
     } catch (error) {
@@ -357,9 +358,14 @@ export default function DadPage() {
                     disabled={isLoading}
                     className="w-full py-4 px-6 rounded-lg bg-[var(--accent-blue)] text-white font-medium hover:opacity-90 transition-all disabled:opacity-50 mb-4 flex items-center justify-center gap-3"
                   >
-                    <span className="text-2xl">👆</span>
-                    {isLoading ? 'Setting up...' : 'Set Up Touch ID'}
+                    <span className="text-2xl">🔑</span>
+                    {isLoading ? 'Setting up...' : 'Set Up Passkey'}
                   </button>
+                )}
+                {webAuthnSupported && (
+                  <p className="text-xs text-[var(--text-secondary)] text-center mb-4 -mt-2">
+                    Syncs via iCloud Keychain across all your devices
+                  </p>
                 )}
 
                 <button
@@ -400,14 +406,14 @@ export default function DadPage() {
             ) : (
               // Already set up - authenticate
               <>
-                {isRegistered && webAuthnSupported && (
+                {webAuthnSupported && (
                   <button
                     onClick={authenticateWebAuthn}
                     disabled={isLoading}
                     className="w-full py-4 px-6 rounded-lg bg-[var(--accent-blue)] text-white font-medium hover:opacity-90 transition-all disabled:opacity-50 mb-4 flex items-center justify-center gap-3"
                   >
-                    <span className="text-2xl">👆</span>
-                    {isLoading ? 'Verifying...' : 'Use Touch ID'}
+                    <span className="text-2xl">🔑</span>
+                    {isLoading ? 'Verifying...' : 'Use Passkey'}
                   </button>
                 )}
 
@@ -471,7 +477,7 @@ export default function DadPage() {
               <span className="text-3xl">🦕</span>
               <div>
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">Danny</h2>
-                <p className="text-sm text-[var(--text-secondary)]">Age 5 • /danny</p>
+                <p className="text-sm text-[var(--text-secondary)]">Age 5 (Jan 15, 2020) • /danny</p>
               </div>
             </div>
 
@@ -535,7 +541,7 @@ export default function DadPage() {
               <span className="text-3xl">🦖</span>
               <div>
                 <h2 className="text-xl font-bold text-[var(--text-primary)]">Hank</h2>
-                <p className="text-sm text-[var(--text-secondary)]">Age 4 • /hank</p>
+                <p className="text-sm text-[var(--text-secondary)]">Age 4 (Nov 30, 2020) • /hank</p>
               </div>
             </div>
 
