@@ -493,12 +493,13 @@ body {
 
 /* Poem line styling for typewriter */
 .poem-line {
-  font-size: 0.8rem;
-  line-height: 1.5;
+  font-size: 0.875rem;
+  line-height: 1.6;
   font-style: italic;
   margin: 0;
-  padding: 0.1rem 0;
-  white-space: nowrap;
+  padding: 0.2rem 0;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 /* Swipe indicator pill */
@@ -564,13 +565,18 @@ body {
 /* Mobile optimizations */
 @media (max-width: 480px) {
   .poem-container {
-    padding: 1.5rem 1.25rem 2rem;
+    padding: 1.5rem 1rem 2rem;
     margin: 0.5rem;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .poem-content {
+    padding: 0 0.25rem;
   }
 
   .poem-line {
-    font-size: 0.85rem;
-    line-height: 1.5;
+    font-size: 0.8rem;
+    line-height: 1.55;
   }
 
   .swipe-indicator {
