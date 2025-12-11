@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Hank's birthday - November 30, 2020 (just turned 4)
+// Hank's birthday - November 30, 2020
 const HANK_BIRTHDAY = new Date('2020-11-30');
 
 const calculateAge = (birthday: Date): number => {
@@ -73,13 +73,186 @@ export default function HankPortal() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 flex items-center justify-center p-4 md:p-8">
-      {/* Desk surface gradient */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-slate-700/20 via-transparent to-transparent" />
+  // Shared content component for both mobile and desktop bezel views
+  const ScreenContent = () => (
+    <>
+      {/* Login Screen */}
+      {!showDesktop && (
+        <div
+          className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 ${isAuthenticated ? 'opacity-0 scale-110' : 'opacity-100 scale-100'}`}
+          style={{
+            background: 'linear-gradient(135deg, #854d0e 0%, #a16207 25%, #ca8a04 50%, #eab308 75%, #facc15 100%)',
+          }}
+        >
+          {/* Floating particles - reduced on mobile */}
+          <div className="absolute inset-0 overflow-hidden">
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white/10 animate-float"
+                style={{
+                  width: Math.random() * 20 + 10 + 'px',
+                  height: Math.random() * 20 + 10 + 'px',
+                  left: Math.random() * 100 + '%',
+                  top: Math.random() * 100 + '%',
+                  animationDelay: Math.random() * 5 + 's',
+                  animationDuration: Math.random() * 10 + 10 + 's',
+                }}
+              />
+            ))}
+          </div>
 
-      {/* MacBook Air */}
-      <div className="relative w-full max-w-4xl animate-fade-in">
+          {/* Name watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+            <span
+              className="text-[25vw] md:text-[180px] font-black text-white/[0.07] tracking-tight"
+              style={{ fontFamily: "'Nunito', sans-serif" }}
+            >
+              Hank
+            </span>
+          </div>
+
+          {/* Login content - BIGGER for Hank */}
+          <div className="relative z-10 flex flex-col items-center px-4">
+            {/* Avatar - Larger */}
+            <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4 shadow-lg border-4 border-white/30">
+              <span className="text-6xl md:text-7xl">🦖</span>
+            </div>
+
+            {/* Name - Larger */}
+            <h1
+              className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg"
+              style={{ fontFamily: "'Nunito', sans-serif" }}
+            >
+              Hank
+            </h1>
+
+            {/* Big Number Pad - Visual only, no text */}
+            <div className={`mt-6 ${error ? 'animate-shake' : ''}`}>
+              {/* Password display - just a big circle */}
+              <div className="flex justify-center mb-4">
+                <div className={`w-20 h-20 rounded-full border-4 ${password ? 'bg-white border-white' : 'bg-white/20 border-white/40'} transition-all duration-200 flex items-center justify-center`}>
+                  {password && <span className="text-4xl">⭐</span>}
+                </div>
+              </div>
+
+              {/* Number grid - EXTRA BIG for Hank */}
+              <div className="grid grid-cols-5 gap-2 md:gap-3">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => handleNumberPress(num)}
+                    className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-white/20 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm border-2 border-white/30 text-white text-2xl md:text-3xl font-bold transition-all active:scale-95 shadow-lg"
+                    style={{ fontFamily: "'Nunito', sans-serif" }}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Visual hint - birthday cake emoji */}
+            <div className="mt-6 text-4xl animate-bounce">
+              🎂
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop */}
+      {showDesktop && (
+        <div
+          className="absolute inset-0 animate-fade-in"
+          style={{
+            background: 'linear-gradient(135deg, #854d0e 0%, #a16207 25%, #ca8a04 50%, #eab308 75%, #facc15 100%)',
+          }}
+        >
+          {/* Floating particles */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(10)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white/10 animate-float"
+                style={{
+                  width: Math.random() * 15 + 8 + 'px',
+                  height: Math.random() * 15 + 8 + 'px',
+                  left: Math.random() * 100 + '%',
+                  top: Math.random() * 100 + '%',
+                  animationDelay: Math.random() * 5 + 's',
+                  animationDuration: Math.random() * 10 + 10 + 's',
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Name watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+            <span
+              className="text-[30vw] md:text-[220px] font-black text-white/[0.05] tracking-tight"
+              style={{ fontFamily: "'Nunito', sans-serif" }}
+            >
+              Hank
+            </span>
+          </div>
+
+          {/* Menu bar */}
+          <div className="absolute top-0 left-0 right-0 h-10 md:h-7 bg-black/20 backdrop-blur-md flex items-center justify-between px-4 text-white/90 text-xs font-medium safe-area-inset">
+            <div className="flex items-center gap-4">
+              <span className="text-sm"></span>
+              <span style={{ fontFamily: "'Nunito', sans-serif" }}>🦖</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span>🔋</span>
+              <span style={{ fontFamily: "'Nunito', sans-serif" }}>{currentTime}</span>
+            </div>
+          </div>
+
+          {/* Desktop - Single HUGE icon for Hank */}
+          <div className="absolute inset-0 pt-16 md:pt-12 pb-24 flex items-center justify-center">
+            <button
+              onClick={() => router.push('/hank/dino')}
+              className="group flex flex-col items-center gap-4"
+            >
+              <div className="w-36 h-36 md:w-40 md:h-40 rounded-3xl bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 flex items-center justify-center shadow-2xl active:scale-95 transition-all duration-200 border-4 border-white/20">
+                <span className="text-7xl md:text-8xl">🦖</span>
+              </div>
+              <span
+                className="text-white text-2xl md:text-2xl font-bold drop-shadow-lg"
+                style={{ fontFamily: "'Nunito', sans-serif" }}
+              >
+                Play!
+              </span>
+            </button>
+          </div>
+
+          {/* Dock - simpler for Hank */}
+          <div className="absolute bottom-4 md:bottom-3 left-1/2 -translate-x-1/2 safe-area-bottom">
+            <div className="flex items-end gap-2 px-5 py-4 md:py-3 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg">
+              <button
+                onClick={() => router.push('/hank/dino')}
+                className="w-16 h-16 md:w-16 md:h-16 rounded-xl bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 flex items-center justify-center shadow-md active:scale-95 transition-all duration-200"
+              >
+                <span className="text-4xl">🦖</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 flex items-center justify-center md:p-8">
+      {/* Desk surface gradient - desktop only */}
+      <div className="hidden md:block absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-slate-700/20 via-transparent to-transparent" />
+
+      {/* Mobile: Full screen content */}
+      <div className="md:hidden fixed inset-0">
+        <ScreenContent />
+      </div>
+
+      {/* Desktop: MacBook Air bezel */}
+      <div className="hidden md:block relative w-full max-w-4xl animate-fade-in">
         {/* Screen bezel */}
         <div className="relative bg-gradient-to-b from-[#e2e2e7] via-[#c8c8cc] to-[#a8a8ac] rounded-t-[20px] p-[12px] shadow-[0_-2px_20px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.5)]">
           {/* Camera notch area */}
@@ -87,169 +260,7 @@ export default function HankPortal() {
 
           {/* Screen */}
           <div className="relative bg-black rounded-[8px] overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]" style={{ aspectRatio: '16/10' }}>
-
-            {/* Login Screen */}
-            {!showDesktop && (
-              <div
-                className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 ${isAuthenticated ? 'opacity-0 scale-110' : 'opacity-100 scale-100'}`}
-                style={{
-                  background: 'linear-gradient(135deg, #854d0e 0%, #a16207 25%, #ca8a04 50%, #eab308 75%, #facc15 100%)',
-                }}
-              >
-                {/* Floating particles */}
-                <div className="absolute inset-0 overflow-hidden">
-                  {[...Array(20)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute rounded-full bg-white/10 animate-float"
-                      style={{
-                        width: Math.random() * 20 + 10 + 'px',
-                        height: Math.random() * 20 + 10 + 'px',
-                        left: Math.random() * 100 + '%',
-                        top: Math.random() * 100 + '%',
-                        animationDelay: Math.random() * 5 + 's',
-                        animationDuration: Math.random() * 10 + 10 + 's',
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Name watermark */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                  <span
-                    className="text-[20vw] md:text-[180px] font-black text-white/[0.07] tracking-tight"
-                    style={{ fontFamily: "'Nunito', sans-serif" }}
-                  >
-                    Hank
-                  </span>
-                </div>
-
-                {/* Login content - BIGGER for Hank */}
-                <div className="relative z-10 flex flex-col items-center">
-                  {/* Avatar - Larger */}
-                  <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-6 shadow-lg border-4 border-white/30">
-                    <span className="text-6xl md:text-7xl">🦖</span>
-                  </div>
-
-                  {/* Name - Larger */}
-                  <h1
-                    className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg"
-                    style={{ fontFamily: "'Nunito', sans-serif" }}
-                  >
-                    Hank
-                  </h1>
-
-                  {/* Big Number Pad - Visual only, no text */}
-                  <div className={`mt-8 ${error ? 'animate-shake' : ''}`}>
-                    {/* Password display - just a big circle */}
-                    <div className="flex justify-center mb-6">
-                      <div className={`w-20 h-20 rounded-full border-4 ${password ? 'bg-white border-white' : 'bg-white/20 border-white/40'} transition-all duration-200 flex items-center justify-center`}>
-                        {password && <span className="text-4xl">⭐</span>}
-                      </div>
-                    </div>
-
-                    {/* Number grid - EXTRA BIG for Hank */}
-                    <div className="grid grid-cols-5 gap-2 md:gap-3">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
-                        <button
-                          key={num}
-                          onClick={() => handleNumberPress(num)}
-                          className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-white/20 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm border-2 border-white/30 text-white text-xl md:text-2xl font-bold transition-all active:scale-95 shadow-lg"
-                          style={{ fontFamily: "'Nunito', sans-serif" }}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Visual hint - birthday cake emoji */}
-                  <div className="mt-8 text-4xl animate-bounce">
-                    🎂
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Desktop */}
-            {showDesktop && (
-              <div
-                className="absolute inset-0 animate-fade-in"
-                style={{
-                  background: 'linear-gradient(135deg, #854d0e 0%, #a16207 25%, #ca8a04 50%, #eab308 75%, #facc15 100%)',
-                }}
-              >
-                {/* Floating particles */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  {[...Array(15)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute rounded-full bg-white/10 animate-float"
-                      style={{
-                        width: Math.random() * 15 + 8 + 'px',
-                        height: Math.random() * 15 + 8 + 'px',
-                        left: Math.random() * 100 + '%',
-                        top: Math.random() * 100 + '%',
-                        animationDelay: Math.random() * 5 + 's',
-                        animationDuration: Math.random() * 10 + 10 + 's',
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Name watermark */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                  <span
-                    className="text-[25vw] md:text-[220px] font-black text-white/[0.05] tracking-tight"
-                    style={{ fontFamily: "'Nunito', sans-serif" }}
-                  >
-                    Hank
-                  </span>
-                </div>
-
-                {/* Menu bar */}
-                <div className="absolute top-0 left-0 right-0 h-7 bg-black/20 backdrop-blur-md flex items-center justify-between px-4 text-white/90 text-xs font-medium">
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm"></span>
-                    <span style={{ fontFamily: "'Nunito', sans-serif" }}>🦖</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span>🔋</span>
-                    <span style={{ fontFamily: "'Nunito', sans-serif" }}>{currentTime}</span>
-                  </div>
-                </div>
-
-                {/* Desktop - Single HUGE icon for Hank */}
-                <div className="absolute inset-0 pt-12 flex items-center justify-center">
-                  <button
-                    onClick={() => router.push('/hank/dino')}
-                    className="group flex flex-col items-center gap-4"
-                  >
-                    <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:shadow-3xl transition-all duration-200 group-hover:-rotate-3 border-4 border-white/20">
-                      <span className="text-7xl md:text-8xl group-hover:animate-bounce">🦖</span>
-                    </div>
-                    <span
-                      className="text-white text-xl md:text-2xl font-bold drop-shadow-lg"
-                      style={{ fontFamily: "'Nunito', sans-serif" }}
-                    >
-                      Play!
-                    </span>
-                  </button>
-                </div>
-
-                {/* Dock - simpler for Hank */}
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
-                  <div className="flex items-end gap-2 px-4 py-3 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg">
-                    <button
-                      onClick={() => router.push('/hank/dino')}
-                      className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 flex items-center justify-center shadow-md hover:scale-110 hover:-translate-y-2 transition-all duration-200"
-                    >
-                      <span className="text-3xl md:text-4xl">🦖</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <ScreenContent />
           </div>
         </div>
 
@@ -309,6 +320,14 @@ export default function HankPortal() {
 
         .animate-shake {
           animation: shake 0.3s ease-in-out;
+        }
+
+        .safe-area-inset {
+          padding-top: env(safe-area-inset-top);
+        }
+
+        .safe-area-bottom {
+          padding-bottom: env(safe-area-inset-bottom);
         }
       `}</style>
     </div>

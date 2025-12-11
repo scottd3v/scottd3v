@@ -358,42 +358,42 @@ export default function DinoGame({
   }, [settings.difficulty, gameState, highScore, endGame]);
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0f0f0f] flex flex-col items-center justify-center p-4 pt-safe">
       {/* Header */}
-      <div className="text-center mb-6">
+      <div className="text-center mb-4 md:mb-6">
         <button
           onClick={() => router.push(portalUrl)}
-          className="text-[#8a8a8a] text-sm hover:text-[#e8e4de] mb-2 transition-colors"
+          className="text-[#8a8a8a] text-sm active:text-[#e8e4de] hover:text-[#e8e4de] mb-2 transition-colors px-4 py-2 -mx-4 -my-2"
         >
           ← Back to {playerName}&apos;s Computer
         </button>
-        <h1 className="text-2xl font-bold text-[#e8e4de]">
+        <h1 className="text-xl md:text-2xl font-bold text-[#e8e4de]">
           {playerEmoji} {playerName}&apos;s Dino Jump
         </h1>
       </div>
 
-      {/* Stats */}
-      <div className="flex gap-6 mb-4 text-[#e8e4de]">
-        <div className="text-center">
+      {/* Stats - 2x2 grid on mobile, row on desktop */}
+      <div className="grid grid-cols-2 md:flex gap-4 md:gap-6 mb-4 text-[#e8e4de] w-full max-w-md md:max-w-none md:w-auto">
+        <div className="text-center bg-[#1a1a1a] md:bg-transparent rounded-lg p-2 md:p-0">
           <div className="text-xs text-[#8a8a8a]">Score</div>
-          <div className="text-xl font-bold">{score}</div>
+          <div className="text-lg md:text-xl font-bold">{score}</div>
         </div>
-        <div className="text-center">
+        <div className="text-center bg-[#1a1a1a] md:bg-transparent rounded-lg p-2 md:p-0">
           <div className="text-xs text-[#8a8a8a]">High Score</div>
-          <div className="text-xl font-bold text-[#c9a66b]">{highScore}</div>
+          <div className="text-lg md:text-xl font-bold text-[#c9a66b]">{highScore}</div>
         </div>
         <div
-          className="text-center cursor-pointer select-none"
+          className="text-center cursor-pointer select-none bg-[#1a1a1a] md:bg-transparent rounded-lg p-2 md:p-0 active:bg-[#252525]"
           onClick={handleParentTrigger}
         >
           <div className="text-xs text-[#8a8a8a]">Plays Left</div>
-          <div className={`text-xl font-bold ${remainingPlays <= 2 ? 'text-[#c96b6b]' : 'text-[#6bc98a]'}`}>
+          <div className={`text-lg md:text-xl font-bold ${remainingPlays <= 2 ? 'text-[#c96b6b]' : 'text-[#6bc98a]'}`}>
             {remainingPlays}
           </div>
         </div>
-        <div className="text-center">
+        <div className="text-center bg-[#1a1a1a] md:bg-transparent rounded-lg p-2 md:p-0">
           <div className="text-xs text-[#8a8a8a]">Difficulty</div>
-          <div className="text-xl font-bold capitalize">{settings.difficulty}</div>
+          <div className="text-lg md:text-xl font-bold capitalize">{settings.difficulty}</div>
         </div>
       </div>
 
@@ -402,13 +402,13 @@ export default function DinoGame({
         ref={canvasRef}
         width={GAME_WIDTH}
         height={GAME_HEIGHT}
-        className="rounded-lg border border-[#333] cursor-pointer"
+        className="rounded-lg border border-[#333] cursor-pointer touch-manipulation"
         style={{ maxWidth: '100%', height: 'auto' }}
       />
 
       {/* No plays remaining message */}
       {!canPlay && gameState !== 'playing' && (
-        <div className="mt-4 p-4 bg-[#1f1f1f] rounded-lg text-center border border-[#333]">
+        <div className="mt-4 p-4 bg-[#1f1f1f] rounded-lg text-center border border-[#333] mx-4">
           <div className="text-2xl mb-2">😴</div>
           <div className="text-[#e8e4de] font-bold">All done for today!</div>
           <div className="text-[#8a8a8a] text-sm">Come back tomorrow for more plays.</div>
@@ -417,15 +417,15 @@ export default function DinoGame({
 
       {/* Instructions */}
       {canPlay && (
-        <p className="text-[#8a8a8a] text-sm mt-4">
-          Tap, click, or press SPACE to jump!
+        <p className="text-[#8a8a8a] text-sm mt-4 text-center">
+          Tap or press SPACE to jump!
         </p>
       )}
 
       {/* Parent Controls Modal */}
       {showParentMode && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#171717] border border-[#333] rounded-xl p-6 max-w-sm w-full">
+          <div className="bg-[#171717] border border-[#333] rounded-xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-[#e8e4de] mb-4 text-center">
               🔐 Parent Controls
             </h2>
@@ -433,32 +433,79 @@ export default function DinoGame({
             {!pinVerified ? (
               <>
                 <div className="mb-4">
-                  <label className="block text-sm text-[#8a8a8a] mb-2">Enter PIN</label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    value={parentPin}
-                    onChange={(e) => { setParentPin(e.target.value.replace(/\D/g, '')); setPinError(false); }}
-                    className={`w-full bg-[#0f0f0f] border ${pinError ? 'border-red-500' : 'border-[#333]'} rounded-lg px-4 py-3 text-[#e8e4de] text-center text-2xl tracking-widest`}
-                    placeholder="••••"
-                    maxLength={4}
-                  />
-                  {pinError && <p className="text-red-500 text-sm mt-1 text-center">Wrong PIN</p>}
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={closeParentMode}
-                    className="flex-1 py-2 px-4 rounded-lg bg-[#0f0f0f] text-[#8a8a8a] hover:bg-[#1f1f1f]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={verifyPin}
-                    disabled={parentPin.length !== 4}
-                    className="flex-1 py-2 px-4 rounded-lg bg-[#6b8fc9] text-white font-medium disabled:opacity-50"
-                  >
-                    Unlock
-                  </button>
+                  <label className="block text-sm text-[#8a8a8a] mb-2 text-center">Enter PIN</label>
+                  {/* PIN display dots */}
+                  <div className="flex justify-center gap-3 mb-4">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={`w-4 h-4 rounded-full transition-all ${
+                          parentPin.length > i ? 'bg-[#6b8fc9]' : 'bg-[#333]'
+                        } ${pinError ? 'bg-red-500' : ''}`}
+                      />
+                    ))}
+                  </div>
+                  {pinError && <p className="text-red-500 text-sm mb-3 text-center">Wrong PIN - try again</p>}
+                  {/* Number pad */}
+                  <div className="grid grid-cols-3 gap-2 max-w-[200px] mx-auto">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => {
+                          if (parentPin.length < 4) {
+                            const newPin = parentPin + num;
+                            setParentPin(newPin);
+                            setPinError(false);
+                            if (newPin.length === 4) {
+                              const storedPin = localStorage.getItem(`dino-${player}-pin`) || DEFAULT_PIN;
+                              if (newPin === storedPin) {
+                                setPinVerified(true);
+                              } else {
+                                setPinError(true);
+                                setTimeout(() => setParentPin(''), 500);
+                              }
+                            }
+                          }
+                        }}
+                        className="w-14 h-14 rounded-xl bg-[#252525] text-[#e8e4de] text-xl font-bold active:bg-[#333] active:scale-95 transition-all"
+                      >
+                        {num}
+                      </button>
+                    ))}
+                    <button
+                      onClick={closeParentMode}
+                      className="w-14 h-14 rounded-xl bg-[#1a1a1a] text-[#8a8a8a] text-sm font-medium active:bg-[#252525]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (parentPin.length < 4) {
+                          const newPin = parentPin + '0';
+                          setParentPin(newPin);
+                          setPinError(false);
+                          if (newPin.length === 4) {
+                            const storedPin = localStorage.getItem(`dino-${player}-pin`) || DEFAULT_PIN;
+                            if (newPin === storedPin) {
+                              setPinVerified(true);
+                            } else {
+                              setPinError(true);
+                              setTimeout(() => setParentPin(''), 500);
+                            }
+                          }
+                        }
+                      }}
+                      className="w-14 h-14 rounded-xl bg-[#252525] text-[#e8e4de] text-xl font-bold active:bg-[#333] active:scale-95 transition-all"
+                    >
+                      0
+                    </button>
+                    <button
+                      onClick={() => setParentPin(parentPin.slice(0, -1))}
+                      className="w-14 h-14 rounded-xl bg-[#1a1a1a] text-[#8a8a8a] text-xl active:bg-[#252525]"
+                    >
+                      ⌫
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (

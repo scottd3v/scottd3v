@@ -1,0 +1,5 @@
+# robots.txt for scottd3v.com
+User-agent: *
+Allow: /
+
+Sitemap: https://scottd3v.com/sitemap.xml

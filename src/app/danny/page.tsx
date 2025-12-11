@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Danny's birthday - January 15, 2019 (currently 5, turning 6)
+// Danny's birthday - January 15, 2019
 const DANNY_BIRTHDAY = new Date('2019-01-15');
 
 const calculateAge = (birthday: Date): number => {
@@ -25,7 +25,6 @@ export default function DannyPortal() {
   const [error, setError] = useState(false);
   const [showDesktop, setShowDesktop] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const currentAge = calculateAge(DANNY_BIRTHDAY);
   const correctPassword = currentAge.toString();
@@ -54,41 +53,225 @@ export default function DannyPortal() {
     }
   }, []);
 
-  // Focus input on mount
-  useEffect(() => {
-    if (!isAuthenticated && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isAuthenticated]);
+  const handleNumberPress = (num: number) => {
+    if (password.length >= 1) return; // Single digit only
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === correctPassword) {
+    const newPassword = num.toString();
+    setPassword(newPassword);
+
+    if (newPassword === correctPassword) {
       sessionStorage.setItem(SESSION_KEY, 'true');
       localStorage.setItem('danny-last-login', new Date().toISOString());
       setIsAuthenticated(true);
       setTimeout(() => setShowDesktop(true), 800);
     } else {
       setError(true);
-      setPassword('');
-      setTimeout(() => setError(false), 1000);
+      setTimeout(() => {
+        setPassword('');
+        setError(false);
+      }, 1000);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Only allow single digit
-    if (password.length >= 1 && e.key !== 'Backspace' && e.key !== 'Enter') {
-      e.preventDefault();
-    }
-  };
+  // Shared content component for both mobile and desktop bezel views
+  const ScreenContent = () => (
+    <>
+      {/* Login Screen */}
+      {!showDesktop && (
+        <div
+          className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 ${isAuthenticated ? 'opacity-0 scale-110' : 'opacity-100 scale-100'}`}
+          style={{
+            background: 'linear-gradient(135deg, #065f46 0%, #059669 25%, #10b981 50%, #34d399 75%, #6ee7b7 100%)',
+          }}
+        >
+          {/* Floating particles - reduced on mobile */}
+          <div className="absolute inset-0 overflow-hidden">
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white/10 animate-float"
+                style={{
+                  width: Math.random() * 20 + 10 + 'px',
+                  height: Math.random() * 20 + 10 + 'px',
+                  left: Math.random() * 100 + '%',
+                  top: Math.random() * 100 + '%',
+                  animationDelay: Math.random() * 5 + 's',
+                  animationDuration: Math.random() * 10 + 10 + 's',
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Name watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+            <span
+              className="text-[25vw] md:text-[180px] font-black text-white/[0.07] tracking-tight"
+              style={{ fontFamily: "'Nunito', sans-serif" }}
+            >
+              Danny
+            </span>
+          </div>
+
+          {/* Login content */}
+          <div className="relative z-10 flex flex-col items-center px-4">
+            {/* Avatar */}
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-4 shadow-lg border-4 border-white/30">
+              <span className="text-5xl md:text-6xl">🦕</span>
+            </div>
+
+            {/* Name */}
+            <h1
+              className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg"
+              style={{ fontFamily: "'Nunito', sans-serif" }}
+            >
+              Danny
+            </h1>
+
+            {/* Number Pad - same style as Hank */}
+            <div className={`mt-6 ${error ? 'animate-shake' : ''}`}>
+              {/* Password display - just a big circle */}
+              <div className="flex justify-center mb-4">
+                <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full border-4 ${password ? 'bg-white border-white' : 'bg-white/20 border-white/40'} transition-all duration-200 flex items-center justify-center`}>
+                  {password && <span className="text-3xl md:text-4xl">🦕</span>}
+                </div>
+              </div>
+
+              {/* Number grid */}
+              <div className="grid grid-cols-5 gap-2 md:gap-3">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => handleNumberPress(num)}
+                    className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-white/20 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm border-2 border-white/30 text-white text-xl md:text-2xl font-bold transition-all active:scale-95 shadow-lg"
+                    style={{ fontFamily: "'Nunito', sans-serif" }}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Hint */}
+            <p className="mt-6 text-white/70 text-sm md:text-base" style={{ fontFamily: "'Nunito', sans-serif" }}>
+              How old are you? 🎂
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop */}
+      {showDesktop && (
+        <div
+          className="absolute inset-0 animate-fade-in"
+          style={{
+            background: 'linear-gradient(135deg, #065f46 0%, #059669 25%, #10b981 50%, #34d399 75%, #6ee7b7 100%)',
+          }}
+        >
+          {/* Floating particles */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(10)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white/10 animate-float"
+                style={{
+                  width: Math.random() * 15 + 8 + 'px',
+                  height: Math.random() * 15 + 8 + 'px',
+                  left: Math.random() * 100 + '%',
+                  top: Math.random() * 100 + '%',
+                  animationDelay: Math.random() * 5 + 's',
+                  animationDuration: Math.random() * 10 + 10 + 's',
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Name watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+            <span
+              className="text-[30vw] md:text-[220px] font-black text-white/[0.05] tracking-tight"
+              style={{ fontFamily: "'Nunito', sans-serif" }}
+            >
+              Danny
+            </span>
+          </div>
+
+          {/* Menu bar */}
+          <div className="absolute top-0 left-0 right-0 h-10 md:h-7 bg-black/20 backdrop-blur-md flex items-center justify-between px-4 text-white/90 text-xs font-medium safe-area-inset">
+            <div className="flex items-center gap-4">
+              <span className="text-sm"></span>
+              <span style={{ fontFamily: "'Nunito', sans-serif" }}>Danny&apos;s Computer</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span>🔋 100%</span>
+              <span style={{ fontFamily: "'Nunito', sans-serif" }}>{currentTime}</span>
+            </div>
+          </div>
+
+          {/* App Grid - Mobile friendly */}
+          <div className="absolute inset-0 pt-16 md:pt-12 pb-24 px-4 md:px-6 flex items-start">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-4 md:gap-6 w-full max-w-md mx-auto md:mx-0 md:max-w-none">
+              {/* Dino Jump */}
+              <button
+                onClick={() => router.push('/danny/dino')}
+                className="group flex flex-col items-center gap-2 p-2 rounded-xl active:bg-white/10 transition-all duration-200"
+              >
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 flex items-center justify-center shadow-lg active:scale-95 transition-all duration-200">
+                  <span className="text-4xl md:text-5xl">🦖</span>
+                </div>
+                <span
+                  className="text-white text-xs font-semibold drop-shadow-md text-center leading-tight"
+                  style={{ fontFamily: "'Nunito', sans-serif" }}
+                >
+                  Dino Jump
+                </span>
+              </button>
+
+              {/* Homework Help - Coming Soon */}
+              <div className="group flex flex-col items-center gap-2 p-2 rounded-xl opacity-50">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-blue-400 via-blue-500 to-purple-500 flex items-center justify-center shadow-lg grayscale-[30%]">
+                  <span className="text-4xl md:text-5xl">📚</span>
+                </div>
+                <span
+                  className="text-white text-xs font-semibold drop-shadow-md text-center leading-tight"
+                  style={{ fontFamily: "'Nunito', sans-serif" }}
+                >
+                  Homework
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Dock */}
+          <div className="absolute bottom-4 md:bottom-3 left-1/2 -translate-x-1/2 safe-area-bottom">
+            <div className="flex items-end gap-3 md:gap-2 px-4 py-3 md:py-2 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg">
+              <button
+                onClick={() => router.push('/danny/dino')}
+                className="w-14 h-14 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 flex items-center justify-center shadow-md active:scale-95 transition-all duration-200"
+              >
+                <span className="text-3xl">🦖</span>
+              </button>
+              <div className="w-14 h-14 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-blue-400 via-blue-500 to-purple-500 flex items-center justify-center shadow-md opacity-50 grayscale-[30%]">
+                <span className="text-3xl">📚</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 flex items-center justify-center p-4 md:p-8">
-      {/* Desk surface gradient */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-slate-700/20 via-transparent to-transparent" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 flex items-center justify-center md:p-8">
+      {/* Desk surface gradient - desktop only */}
+      <div className="hidden md:block absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-slate-700/20 via-transparent to-transparent" />
 
-      {/* MacBook Air */}
-      <div className="relative w-full max-w-4xl animate-fade-in">
+      {/* Mobile: Full screen content */}
+      <div className="md:hidden fixed inset-0">
+        <ScreenContent />
+      </div>
+
+      {/* Desktop: MacBook Air bezel */}
+      <div className="hidden md:block relative w-full max-w-4xl animate-fade-in">
         {/* Screen bezel */}
         <div className="relative bg-gradient-to-b from-[#e2e2e7] via-[#c8c8cc] to-[#a8a8ac] rounded-t-[20px] p-[12px] shadow-[0_-2px_20px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.5)]">
           {/* Camera notch area */}
@@ -96,189 +279,7 @@ export default function DannyPortal() {
 
           {/* Screen */}
           <div className="relative bg-black rounded-[8px] overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]" style={{ aspectRatio: '16/10' }}>
-
-            {/* Login Screen */}
-            {!showDesktop && (
-              <div
-                className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 ${isAuthenticated ? 'opacity-0 scale-110' : 'opacity-100 scale-100'}`}
-                style={{
-                  background: 'linear-gradient(135deg, #065f46 0%, #059669 25%, #10b981 50%, #34d399 75%, #6ee7b7 100%)',
-                }}
-              >
-                {/* Floating particles */}
-                <div className="absolute inset-0 overflow-hidden">
-                  {[...Array(20)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute rounded-full bg-white/10 animate-float"
-                      style={{
-                        width: Math.random() * 20 + 10 + 'px',
-                        height: Math.random() * 20 + 10 + 'px',
-                        left: Math.random() * 100 + '%',
-                        top: Math.random() * 100 + '%',
-                        animationDelay: Math.random() * 5 + 's',
-                        animationDuration: Math.random() * 10 + 10 + 's',
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Name watermark */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                  <span
-                    className="text-[20vw] md:text-[180px] font-black text-white/[0.07] tracking-tight"
-                    style={{ fontFamily: "'Nunito', sans-serif" }}
-                  >
-                    Danny
-                  </span>
-                </div>
-
-                {/* Login content */}
-                <div className="relative z-10 flex flex-col items-center">
-                  {/* Avatar */}
-                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-6 shadow-lg border-4 border-white/30">
-                    <span className="text-5xl md:text-6xl">🦕</span>
-                  </div>
-
-                  {/* Name */}
-                  <h1
-                    className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg"
-                    style={{ fontFamily: "'Nunito', sans-serif" }}
-                  >
-                    Danny
-                  </h1>
-
-                  {/* Password form */}
-                  <form onSubmit={handlePasswordSubmit} className="mt-6">
-                    <div className={`relative ${error ? 'animate-shake' : ''}`}>
-                      <input
-                        ref={inputRef}
-                        type="password"
-                        inputMode="numeric"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value.replace(/\D/g, '').slice(0, 1))}
-                        onKeyDown={handleKeyPress}
-                        className="w-48 md:w-56 h-12 md:h-14 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/30 text-white text-center text-2xl font-bold placeholder:text-white/50 focus:outline-none focus:border-white/60 focus:bg-white/30 transition-all"
-                        placeholder="Enter age"
-                        autoComplete="off"
-                      />
-                      {error && (
-                        <p className="absolute -bottom-8 left-0 right-0 text-center text-white/90 text-sm font-medium">
-                          Try again!
-                        </p>
-                      )}
-                    </div>
-                    <button type="submit" className="sr-only">Submit</button>
-                  </form>
-
-                  {/* Hint */}
-                  <p className="mt-12 text-white/60 text-sm" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    Type how old you are!
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Desktop */}
-            {showDesktop && (
-              <div
-                className="absolute inset-0 animate-fade-in"
-                style={{
-                  background: 'linear-gradient(135deg, #065f46 0%, #059669 25%, #10b981 50%, #34d399 75%, #6ee7b7 100%)',
-                }}
-              >
-                {/* Floating particles */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  {[...Array(15)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute rounded-full bg-white/10 animate-float"
-                      style={{
-                        width: Math.random() * 15 + 8 + 'px',
-                        height: Math.random() * 15 + 8 + 'px',
-                        left: Math.random() * 100 + '%',
-                        top: Math.random() * 100 + '%',
-                        animationDelay: Math.random() * 5 + 's',
-                        animationDuration: Math.random() * 10 + 10 + 's',
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {/* Name watermark */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                  <span
-                    className="text-[25vw] md:text-[220px] font-black text-white/[0.05] tracking-tight"
-                    style={{ fontFamily: "'Nunito', sans-serif" }}
-                  >
-                    Danny
-                  </span>
-                </div>
-
-                {/* Menu bar */}
-                <div className="absolute top-0 left-0 right-0 h-7 bg-black/20 backdrop-blur-md flex items-center justify-between px-4 text-white/90 text-xs font-medium">
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm"></span>
-                    <span style={{ fontFamily: "'Nunito', sans-serif" }}>Danny&apos;s Computer</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span>🔋 100%</span>
-                    <span style={{ fontFamily: "'Nunito', sans-serif" }}>{currentTime}</span>
-                  </div>
-                </div>
-
-                {/* Desktop icons */}
-                <div className="absolute inset-0 pt-12 p-6">
-                  <div className="flex flex-col gap-6">
-                    {/* Dino Jump */}
-                    <button
-                      onClick={() => router.push('/danny/dino')}
-                      className="group flex flex-col items-center gap-2 w-24 p-2 rounded-xl hover:bg-white/10 transition-all duration-200"
-                    >
-                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-200 group-hover:-rotate-3">
-                        <span className="text-4xl md:text-5xl group-hover:animate-bounce">🦖</span>
-                      </div>
-                      <span
-                        className="text-white text-xs font-semibold drop-shadow-md text-center leading-tight"
-                        style={{ fontFamily: "'Nunito', sans-serif" }}
-                      >
-                        Dino Jump
-                      </span>
-                    </button>
-
-                    {/* Homework Help - Coming Soon */}
-                    <div className="group flex flex-col items-center gap-2 w-24 p-2 rounded-xl opacity-60 cursor-not-allowed">
-                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-blue-400 via-blue-500 to-purple-500 flex items-center justify-center shadow-lg grayscale-[30%]">
-                        <span className="text-4xl md:text-5xl">📚</span>
-                      </div>
-                      <span
-                        className="text-white text-xs font-semibold drop-shadow-md text-center leading-tight"
-                        style={{ fontFamily: "'Nunito', sans-serif" }}
-                      >
-                        Homework
-                        <br />
-                        <span className="text-[10px] opacity-70">(Coming Soon)</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dock */}
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
-                  <div className="flex items-end gap-2 px-3 py-2 bg-white/20 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg">
-                    <button
-                      onClick={() => router.push('/danny/dino')}
-                      className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 flex items-center justify-center shadow-md hover:scale-110 hover:-translate-y-2 transition-all duration-200"
-                    >
-                      <span className="text-2xl md:text-3xl">🦖</span>
-                    </button>
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-blue-400 via-blue-500 to-purple-500 flex items-center justify-center shadow-md opacity-50 grayscale-[30%]">
-                      <span className="text-2xl md:text-3xl">📚</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <ScreenContent />
           </div>
         </div>
 
@@ -338,6 +339,14 @@ export default function DannyPortal() {
 
         .animate-shake {
           animation: shake 0.3s ease-in-out;
+        }
+
+        .safe-area-inset {
+          padding-top: env(safe-area-inset-top);
+        }
+
+        .safe-area-bottom {
+          padding-bottom: env(safe-area-inset-bottom);
         }
       `}</style>
     </div>
